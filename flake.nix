@@ -86,6 +86,13 @@
           SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
         };
 
+        # Read crate metadata from Cargo.toml
+        cargoToml = pkgs.lib.importTOML (./Cargo.toml);
+        cargoPkg = cargoToml.package;
+        cargoLicense = cargoPkg.license or "";
+        nixLicense = with pkgs.lib.licenses;
+          if cargoLicense == "MIT" then mit
+          else null;
       in
       {
         # Development shell
@@ -133,8 +140,8 @@ EOF
 
         # Package definition
         packages.default = pkgs.rustPlatform.buildRustPackage {
-          pname = "supabase-lib-rs";
-          version = "0.1.1";
+          pname = cargoPkg.name;
+          version = cargoPkg.version;
 
           src = ./.;
 
@@ -152,9 +159,9 @@ EOF
           doCheck = false;
 
           meta = with pkgs.lib; {
-            description = "A comprehensive Rust client library for Supabase";
-            homepage = "https://github.com/nizovtsevnv/supabase-lib-rs";
-            license = licenses.mit;
+            description = cargoPkg.description or "";
+            homepage = cargoPkg.homepage or cargoPkg.repository or "";
+            license = nixLicense;
             maintainers = [ ];
           };
         };
@@ -199,10 +206,7 @@ EOF
         };
 
         # App for running the library (examples)
-        apps.default = flake-utils.lib.mkApp {
-          drv = self.packages.${system}.default;
-          exePath = "/bin/supabase-lib-rs";
-        };
+        # Note: this is a library-only crate, so no default binary app is provided.
       }
     );
 }
