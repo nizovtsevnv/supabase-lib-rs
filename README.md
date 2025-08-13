@@ -1,9 +1,10 @@
 # Supabase Rust Client
 
-[![Crates.io](https://img.shields.io/crates/v/supabase-rs)](https://crates.io/crates/supabase-rs)
-[![Documentation](https://docs.rs/supabase-rs/badge.svg)](https://docs.rs/supabase-rs)
-[![License](https://img.shields.io/crates/l/supabase-rs)](LICENSE)
-[![Build Status](https://github.com/nizovtsevnv/supabase-rs/workflows/CI/badge.svg)](https://github.com/nizovtsevnv/supabase-rs/actions)
+[![CI](https://github.com/nizovtsevnv/supabase-lib-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/nizovtsevnv/supabase-lib-rs/actions/workflows/ci.yml)
+[![Crates.io](https://img.shields.io/crates/v/supabase-lib-rs)](https://crates.io/crates/supabase-lib-rs)
+[![docs.rs](https://docs.rs/supabase-lib-rs/badge.svg)](https://docs.rs/supabase-lib-rs)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Build Status](https://github.com/nizovtsevnv/supabase-lib-rs/workflows/CI/badge.svg)](https://github.com/nizovtsevnv/supabase-lib-rs/actions)
 
 A comprehensive, production-ready Rust client library for [Supabase](https://supabase.com/). This library provides a clean, type-safe, and efficient interface to interact with all Supabase services.
 
@@ -24,14 +25,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-supabase-rs = "0.1.0"
+supabase-lib-rs = "0.1.0"
 tokio = { version = "1.0", features = ["full"] }
 ```
 
 Or use cargo to add it:
 
 ```bash
-cargo add supabase-rs
+cargo add supabase-lib-rs
 ```
 
 ## 🏃 Quick Start
@@ -367,7 +368,7 @@ just example realtime_example
 ### Project Structure
 
 ```
-supabase-rs/
+supabase-lib-rs/
 ├── src/
 │   ├── lib.rs          # Library entry point
 │   ├── client.rs       # Main Supabase client
@@ -506,8 +507,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Supabase Documentation](https://supabase.com/docs)
 - [PostgREST API Reference](https://postgrest.org/en/latest/api.html)
 - [Supabase Realtime](https://supabase.com/docs/guides/realtime)
-- [Crates.io Package](https://crates.io/crates/supabase-rs)
-- [Documentation](https://docs.rs/supabase-rs)
+- [Crates.io Package](https://crates.io/crates/supabase-lib-rs)
+- [Documentation](https://docs.rs/supabase-lib-rs)
 
 ## 🙏 Acknowledgments
 
