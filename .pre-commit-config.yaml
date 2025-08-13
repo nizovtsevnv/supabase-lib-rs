@@ -1,0 +1,131 @@
+# Pre-commit configuration for Supabase Rust Client
+# Install with: pre-commit install
+# Run manually with: pre-commit run --all-files
+
+repos:
+  # Rust-specific hooks
+  - repo: local
+    hooks:
+      # Rust formatting
+      - id: rust-fmt
+        name: Rust Format Check
+        entry: cargo fmt -- --check
+        language: system
+        files: \.rs$
+        pass_filenames: false
+        description: "Check Rust code formatting with rustfmt"
+
+      # Rust linting
+      - id: rust-clippy
+        name: Rust Clippy Linting
+        entry: cargo clippy --all-targets --all-features -- -D warnings
+        language: system
+        files: \.rs$
+        pass_filenames: false
+        description: "Lint Rust code with clippy (no warnings allowed)"
+
+      # Rust testing
+      - id: rust-test
+        name: Rust Tests
+        entry: cargo test --all-features
+        language: system
+        files: \.(rs|toml)$
+        pass_filenames: false
+        description: "Run all Rust tests"
+
+      # Rust build check
+      - id: rust-build
+        name: Rust Build Check
+        entry: cargo check --all-targets --all-features
+        language: system
+        files: \.(rs|toml)$
+        pass_filenames: false
+        description: "Check that Rust code compiles"
+
+      # Security audit
+      - id: cargo-audit
+        name: Cargo Security Audit
+        entry: cargo audit
+        language: system
+        files: Cargo\.(toml|lock)$
+        pass_filenames: false
+        description: "Check for security vulnerabilities in dependencies"
+
+      # License and dependency check (disabled for now due to dev dependency warnings)
+      # - id: cargo-deny
+      #   name: Cargo Deny Check
+      #   entry: cargo deny check
+      #   language: system
+      #   files: Cargo\.(toml|lock)$
+      #   pass_filenames: false
+      #   description: "Check licenses and banned dependencies"
+
+  # General code quality hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      # Remove trailing whitespace
+      - id: trailing-whitespace
+        description: "Trim trailing whitespace"
+
+      # Ensure files end with newline
+      - id: end-of-file-fixer
+        description: "Ensure files end with a newline"
+
+      # Check for merge conflicts
+      - id: check-merge-conflict
+        description: "Check for merge conflict markers"
+
+      # Validate YAML files
+      - id: check-yaml
+        description: "Validate YAML syntax"
+        exclude: ^\.pre-commit-config\.yaml$
+
+      # Validate JSON files
+      - id: check-json
+        description: "Validate JSON syntax"
+
+      # Validate TOML files
+      - id: check-toml
+        description: "Validate TOML syntax"
+
+      # Check for case conflicts
+      - id: check-case-conflict
+        description: "Check for case-insensitive filename conflicts"
+
+      # Check for added large files
+      - id: check-added-large-files
+        description: "Prevent adding large files to git"
+        args: ["--maxkb=1000"] # 1MB limit
+
+      # Mixed line endings
+      - id: mixed-line-ending
+        description: "Ensure consistent line endings"
+        args: ["--fix=lf"]
+
+  # Documentation checks
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        name: Format Documentation
+        description: "Format Markdown and other documentation files"
+        files: \.(md|yaml|yml)$
+        exclude: ^CHANGELOG\.md$
+
+# Configuration
+fail_fast: false # Continue running hooks even if one fails
+minimum_pre_commit_version: "3.0.0"
+
+# Default language version
+default_language_version:
+  python: python3
+
+# Exclude patterns
+exclude: |
+  (?x)^(
+    target/.*|
+    \.git/.*|
+    \.nix-.*|
+    result.*
+  )$

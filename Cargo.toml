@@ -1,0 +1,80 @@
+[package]
+name = "supabase-rs"
+version = "0.1.0"
+edition = "2021"
+description = "A comprehensive Rust client library for Supabase"
+license = "MIT"
+repository = "https://github.com/nizovtsevnv/supabase-rs"
+keywords = ["supabase", "database", "auth", "storage", "realtime"]
+categories = ["web-programming", "database", "authentication"]
+
+[dependencies]
+# HTTP client
+reqwest = { version = "0.12", features = ["json", "rustls-tls", "multipart"], default-features = false }
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+tokio-tungstenite = { version = "0.21", features = ["rustls-tls-native-roots"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# URL handling
+url = "2.4"
+
+# UUID support
+uuid = { version = "1.6", features = ["v4", "serde"] }
+
+# JWT handling
+jsonwebtoken = "9.2"
+
+# Base64 encoding
+base64 = "0.21"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# Utilities
+bytes = "1.5"
+futures-util = "0.3"
+
+[dev-dependencies]
+tokio-test = "0.4"
+mockito = "1.2"
+wiremock = "0.5"
+
+[features]
+default = ["auth", "database", "storage", "realtime"]
+auth = []
+database = []
+storage = []
+realtime = []
+
+[[example]]
+name = "basic_usage"
+path = "examples/basic_usage.rs"
+
+[[example]]
+name = "auth_example"
+path = "examples/auth_example.rs"
+
+[[example]]
+name = "database_example"
+path = "examples/database_example.rs"
+
+[[example]]
+name = "storage_example"
+path = "examples/storage_example.rs"
+
+[[example]]
+name = "realtime_example"
+path = "examples/realtime_example.rs"
