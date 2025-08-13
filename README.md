@@ -4,7 +4,7 @@
 [![Crates.io](https://img.shields.io/crates/v/supabase-lib-rs)](https://crates.io/crates/supabase-lib-rs)
 [![docs.rs](https://docs.rs/supabase-lib-rs/badge.svg)](https://docs.rs/supabase-lib-rs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Build Status](https://github.com/nizovtsevnv/supabase-lib-rs/workflows/CI/badge.svg)](https://github.com/nizovtsevnv/supabase-lib-rs/actions)
+[![Build (musl)](https://github.com/nizovtsevnv/supabase-lib-rs/actions/workflows/build.yml/badge.svg)](https://github.com/nizovtsevnv/supabase-lib-rs/actions/workflows/build.yml)
 
 A comprehensive, production-ready Rust client library for [Supabase](https://supabase.com/). This library provides a clean, type-safe, and efficient interface to interact with all Supabase services.
 

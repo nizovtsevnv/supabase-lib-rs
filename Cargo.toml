@@ -11,9 +11,17 @@ documentation = "https://docs.rs/supabase-lib-rs"
 keywords = ["supabase", "database", "auth", "storage", "realtime"]
 categories = ["web-programming", "database", "authentication"]
 
+[badges]
+docsrs = { repository = "https://docs.rs/supabase-lib-rs" }
+
 [lib]
 name = "supabase"
 crate-type = ["rlib", "staticlib"]
+
+[package.metadata.docs.rs]
+# Enable all features to build comprehensive docs
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 # HTTP client
