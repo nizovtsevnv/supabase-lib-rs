@@ -99,8 +99,9 @@
             # Set environment variables
             ${builtins.concatStringsSep "\n" (pkgs.lib.mapAttrsToList (name: value: "export ${name}=\"${value}\"") shellVars)}
 
-            # Create .env file for development
-            cat > .env << EOF
+            # Create .env file for development (only if missing)
+            if [ ! -f .env ]; then
+              cat > .env << EOF
 # Supabase Configuration
 SUPABASE_URL=http://localhost:54321
 SUPABASE_ANON_KEY=test-anon-key
@@ -110,6 +111,10 @@ SUPABASE_SERVICE_ROLE_KEY=test-service-role-key
 RUST_LOG=debug
 RUST_BACKTRACE=1
 EOF
+              echo "Created default .env (edit with your project credentials)"
+            else
+              echo ".env found; leaving it unchanged"
+            fi
 
             # Ensure directories exist
             mkdir -p target
@@ -129,7 +134,7 @@ EOF
         # Package definition
         packages.default = pkgs.rustPlatform.buildRustPackage {
           pname = "supabase-lib-rs";
-          version = "0.1.0";
+          version = "0.1.1";
 
           src = ./.;
 
