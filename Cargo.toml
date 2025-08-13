@@ -5,6 +5,9 @@ edition = "2021"
 description = "A comprehensive Rust client library for Supabase"
 license = "MIT"
 repository = "https://github.com/nizovtsevnv/supabase-lib-rs"
+readme = "README.md"
+homepage = "https://github.com/nizovtsevnv/supabase-lib-rs"
+documentation = "https://docs.rs/supabase-lib-rs"
 keywords = ["supabase", "database", "auth", "storage", "realtime"]
 categories = ["web-programming", "database", "authentication"]
 
