@@ -1,7 +1,7 @@
 //! Authentication example for Supabase Rust client
 
 use std::env;
-use supabase_rs::prelude::*;
+use supabase::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<()> {

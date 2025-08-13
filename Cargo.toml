@@ -1,12 +1,16 @@
 [package]
-name = "supabase-rs"
+name = "supabase-lib-rs"
 version = "0.1.0"
 edition = "2021"
 description = "A comprehensive Rust client library for Supabase"
 license = "MIT"
-repository = "https://github.com/nizovtsevnv/supabase-rs"
+repository = "https://github.com/nizovtsevnv/supabase-lib-rs"
 keywords = ["supabase", "database", "auth", "storage", "realtime"]
 categories = ["web-programming", "database", "authentication"]
+
+[lib]
+name = "supabase"
+crate-type = ["rlib", "staticlib"]
 
 [dependencies]
 # HTTP client

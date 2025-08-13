@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::env;
-use supabase_rs::prelude::*;
+use supabase::prelude::*;
 
 // Example data structures for database operations
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,7 +54,7 @@ async fn main() -> Result<()> {
         .from("posts")
         .select("id, title, content, published, created_at")
         .eq("published", "true")
-        .order("created_at", supabase_rs::types::OrderDirection::Descending)
+        .order("created_at", supabase::types::OrderDirection::Descending)
         .limit(5);
 
     match select_query.execute::<Post>().await {
@@ -198,7 +198,7 @@ async fn main() -> Result<()> {
         .eq("published", "true")
         .like("title", "%Rust%")
         .gte("created_at", "2023-01-01T00:00:00Z")
-        .order("created_at", supabase_rs::types::OrderDirection::Ascending)
+        .order("created_at", supabase::types::OrderDirection::Ascending)
         .limit(10)
         .offset(0);
 
@@ -276,7 +276,7 @@ async fn main() -> Result<()> {
         .select("id, title, created_at")
         .gte("created_at", "2023-01-01T00:00:00Z")
         .lt("created_at", "2024-01-01T00:00:00Z")
-        .order("created_at", supabase_rs::types::OrderDirection::Descending);
+        .order("created_at", supabase::types::OrderDirection::Descending);
 
     match range_query.execute::<Post>().await {
         Ok(posts) => {

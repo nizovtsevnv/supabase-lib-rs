@@ -128,7 +128,7 @@ EOF
 
         # Package definition
         packages.default = pkgs.rustPlatform.buildRustPackage {
-          pname = "supabase-rs";
+          pname = "supabase-lib-rs";
           version = "0.1.0";
 
           src = ./.;
@@ -148,7 +148,7 @@ EOF
 
           meta = with pkgs.lib; {
             description = "A comprehensive Rust client library for Supabase";
-            homepage = "https://github.com/nizovtsevnv/supabase-rs";
+            homepage = "https://github.com/nizovtsevnv/supabase-lib-rs";
             license = licenses.mit;
             maintainers = [ ];
           };
@@ -196,7 +196,7 @@ EOF
         # App for running the library (examples)
         apps.default = flake-utils.lib.mkApp {
           drv = self.packages.${system}.default;
-          exePath = "/bin/supabase-rs";
+          exePath = "/bin/supabase-lib-rs";
         };
       }
     );

@@ -9,7 +9,7 @@
 //! ## Quick Start
 //!
 //! ```rust,no_run
-//! use supabase_rs::Client;
+//! use supabase::Client;
 //! use serde::{Deserialize, Serialize};
 //!
 //! #[derive(Debug, Serialize, Deserialize)]

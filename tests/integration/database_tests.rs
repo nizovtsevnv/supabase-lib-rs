@@ -1,6 +1,6 @@
 //! Integration tests for database module
 
-use supabase_rs::prelude::*;
+use supabase::prelude::*;
 use serde_json::json;
 
 mod common;
@@ -201,7 +201,7 @@ async fn test_query_builder_chaining() {
         .eq("published", "true")
         .gt("created_at", "2023-01-01")
         .like("title", "%rust%")
-        .order("created_at", supabase_rs::types::OrderDirection::Descending)
+        .order("created_at", supabase::types::OrderDirection::Descending)
         .limit(20);
 
     // Chaining should work without errors

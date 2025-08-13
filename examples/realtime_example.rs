@@ -1,7 +1,7 @@
 //! Realtime subscriptions example for Supabase Rust client
 
 use std::{env, sync::Arc, time::Duration};
-use supabase_rs::{prelude::*, realtime::RealtimeEvent};
+use supabase::{prelude::*, realtime::RealtimeEvent};
 use tokio::time::sleep;
 
 #[tokio::main]

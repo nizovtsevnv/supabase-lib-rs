@@ -38,7 +38,7 @@ cargo add supabase-lib-rs
 ## 🏃 Quick Start
 
 ```rust
-use supabase_rs::prelude::*;
+use supabase::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -95,7 +95,7 @@ async fn main() -> Result<()> {
 ### Authentication
 
 ```rust
-use supabase_rs::prelude::*;
+use supabase::prelude::*;
 
 let client = Client::new("your-url", "your-key")?;
 
@@ -128,7 +128,7 @@ client.auth().sign_out().await?;
 ### Database Operations
 
 ```rust
-use supabase_rs::prelude::*;
+use supabase::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -206,7 +206,7 @@ let result = client
 ### Storage Operations
 
 ```rust
-use supabase_rs::prelude::*;
+use supabase::prelude::*;
 use bytes::Bytes;
 
 let client = Client::new("your-url", "your-key")?;
@@ -263,7 +263,7 @@ let files = client
 ### Realtime Subscriptions
 
 ```rust
-use supabase_rs::prelude::*;
+use supabase::prelude::*;
 
 let client = Client::new("your-url", "your-key")?;
 let realtime = client.realtime();
@@ -447,7 +447,7 @@ cargo run --example basic_usage
 ### Custom Configuration
 
 ```rust
-use supabase_rs::{Client, types::*};
+use supabase::{Client, types::*};
 
 let config = SupabaseConfig {
     url: "https://your-project.supabase.co".to_string(),

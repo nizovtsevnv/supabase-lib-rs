@@ -1,6 +1,6 @@
 //! Integration tests for the main client
 
-use supabase_rs::Client;
+use supabase::Client;
 
 mod common;
 use common::*;
