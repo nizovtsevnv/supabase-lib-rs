@@ -99,6 +99,14 @@ impl Storage {
         })
     }
 
+    /// Get the appropriate authorization key for admin operations
+    fn get_admin_key(&self) -> &str {
+        self.config
+            .service_role_key
+            .as_ref()
+            .unwrap_or(&self.config.key)
+    }
+
     /// List all storage buckets
     pub async fn list_buckets(&self) -> Result<Vec<Bucket>> {
         debug!("Listing all storage buckets");
@@ -154,7 +162,13 @@ impl Storage {
         });
 
         let url = format!("{}/storage/v1/bucket", self.config.url);
-        let response = self.http_client.post(&url).json(&payload).send().await?;
+        let response = self
+            .http_client
+            .post(&url)
+            .header("Authorization", format!("Bearer {}", self.get_admin_key()))
+            .json(&payload)
+            .send()
+            .await?;
 
         if !response.status().is_success() {
             let status = response.status();
@@ -181,7 +195,13 @@ impl Storage {
         }
 
         let url = format!("{}/storage/v1/bucket/{}", self.config.url, id);
-        let response = self.http_client.put(&url).json(&payload).send().await?;
+        let response = self
+            .http_client
+            .put(&url)
+            .header("Authorization", format!("Bearer {}", self.get_admin_key()))
+            .json(&payload)
+            .send()
+            .await?;
 
         if !response.status().is_success() {
             let status = response.status();
@@ -201,7 +221,12 @@ impl Storage {
         debug!("Deleting bucket: {}", id);
 
         let url = format!("{}/storage/v1/bucket/{}", self.config.url, id);
-        let response = self.http_client.delete(&url).send().await?;
+        let response = self
+            .http_client
+            .delete(&url)
+            .header("Authorization", format!("Bearer {}", self.get_admin_key()))
+            .send()
+            .await?;
 
         if !response.status().is_success() {
             let status = response.status();
@@ -222,11 +247,9 @@ impl Storage {
 
         let url = format!("{}/storage/v1/object/list/{}", self.config.url, bucket_id);
 
-        let payload = if let Some(path) = path {
-            serde_json::json!({ "prefix": path })
-        } else {
-            serde_json::json!({})
-        };
+        let payload = serde_json::json!({
+            "prefix": path.unwrap_or("")
+        });
 
         let response = self.http_client.post(&url).json(&payload).send().await?;
 
@@ -257,7 +280,10 @@ impl Storage {
 
         let options = options.unwrap_or_default();
 
-        let url = format!("{}/storage/v1/object/{}", self.config.url, bucket_id);
+        let url = format!(
+            "{}/storage/v1/object/{}/{}",
+            self.config.url, bucket_id, path
+        );
 
         let mut form = multipart::Form::new().part(
             "file",
@@ -438,7 +464,7 @@ impl Storage {
 
         let payload = serde_json::json!({
             "expiresIn": expires_in_seconds,
-            "path": path
+            "paths": [path]
         });
 
         let response = self.http_client.post(&url).json(&payload).send().await?;
@@ -453,12 +479,20 @@ impl Storage {
         }
 
         let result: serde_json::Value = response.json().await?;
-        let signed_url = result["signedURL"]
-            .as_str()
-            .ok_or_else(|| Error::storage("Invalid signed URL response"))?;
+        let signed_urls = result["signedUrls"].as_array().ok_or_else(|| {
+            Error::storage("Invalid signed URL response - missing signedUrls array")
+        })?;
+
+        let first = signed_urls.first().ok_or_else(|| {
+            Error::storage("Invalid signed URL response - empty signedUrls array")
+        })?;
+
+        let first_url = first["signedUrl"].as_str().ok_or_else(|| {
+            Error::storage("Invalid signed URL response - missing signedUrl field")
+        })?;
 
         info!("Created signed URL successfully for: {}", path);
-        Ok(signed_url.to_string())
+        Ok(first_url.to_string())
     }
 
     /// Get transformed image URL

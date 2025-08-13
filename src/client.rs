@@ -50,6 +50,45 @@ impl Client {
         let config = SupabaseConfig {
             url: url.to_string(),
             key: key.to_string(),
+            service_role_key: None,
+            http_config: HttpConfig::default(),
+            auth_config: AuthConfig::default(),
+            database_config: DatabaseConfig::default(),
+            storage_config: StorageConfig::default(),
+        };
+
+        Self::new_with_config(config)
+    }
+
+    /// Create a new Supabase client with service role key for admin operations
+    ///
+    /// # Arguments
+    ///
+    /// * `url` - Your Supabase project URL (e.g., "https://your-project.supabase.co")
+    /// * `anon_key` - Your Supabase anon API key for client-side operations
+    /// * `service_role_key` - Your Supabase service role key for admin operations
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use supabase::Client;
+    ///
+    /// let client = Client::new_with_service_role(
+    ///     "https://your-project.supabase.co",
+    ///     "your-anon-key",
+    ///     "your-service-role-key"
+    /// )?;
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
+    pub fn new_with_service_role(
+        url: &str,
+        anon_key: &str,
+        service_role_key: &str,
+    ) -> Result<Self> {
+        let config = SupabaseConfig {
+            url: url.to_string(),
+            key: anon_key.to_string(),
+            service_role_key: Some(service_role_key.to_string()),
             http_config: HttpConfig::default(),
             auth_config: AuthConfig::default(),
             database_config: DatabaseConfig::default(),
@@ -73,6 +112,7 @@ impl Client {
     /// let config = SupabaseConfig {
     ///     url: "https://your-project.supabase.co".to_string(),
     ///     key: "your-anon-key".to_string(),
+    ///     service_role_key: None,
     ///     http_config: HttpConfig::default(),
     ///     auth_config: AuthConfig::default(),
     ///     database_config: DatabaseConfig::default(),
@@ -189,12 +229,7 @@ impl Client {
                 .parse()
                 .map_err(|e| Error::config(format!("Invalid authorization header: {}", e)))?,
         );
-        headers.insert(
-            "Content-Type",
-            "application/json"
-                .parse()
-                .map_err(|e| Error::config(format!("Invalid content-type header: {}", e)))?,
-        );
+
 
         // Add custom headers
         for (key, value) in &config.http_config.default_headers {

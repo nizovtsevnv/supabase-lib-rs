@@ -177,8 +177,7 @@ impl Auth {
 
         let response = self
             .http_client
-            .post(format!("{}/auth/v1/token", self.config.url))
-            .header("grant_type", "password")
+            .post(format!("{}/auth/v1/token?grant_type=password", self.config.url))
             .json(&payload)
             .send()
             .await?;
@@ -320,8 +319,7 @@ impl Auth {
 
         let response = self
             .http_client
-            .post(format!("{}/auth/v1/token", self.config.url))
-            .header("grant_type", "refresh_token")
+            .post(format!("{}/auth/v1/token?grant_type=refresh_token", self.config.url))
             .json(&payload)
             .send()
             .await?;
