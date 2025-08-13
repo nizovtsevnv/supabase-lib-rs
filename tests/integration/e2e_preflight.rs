@@ -1,4 +1,5 @@
-use crate::common::*;
+mod common;
+use common::*;
 
 async_test!(e2e_preflight_health_and_version, || async {
 	let client = create_test_client();

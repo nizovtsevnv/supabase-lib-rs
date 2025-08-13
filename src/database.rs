@@ -154,27 +154,47 @@ impl Database {
         let mut params = HashMap::new();
 
         for filter in filters {
-            let key = match filter.operator {
-                FilterOperator::Equal => filter.column.clone(),
-                FilterOperator::NotEqual => format!("{}:neq", filter.column),
-                FilterOperator::GreaterThan => format!("{}:gt", filter.column),
-                FilterOperator::GreaterThanOrEqual => format!("{}:gte", filter.column),
-                FilterOperator::LessThan => format!("{}:lt", filter.column),
-                FilterOperator::LessThanOrEqual => format!("{}:lte", filter.column),
-                FilterOperator::Like => format!("{}:like", filter.column),
-                FilterOperator::ILike => format!("{}:ilike", filter.column),
-                FilterOperator::Is => format!("{}:is", filter.column),
-                FilterOperator::In => format!("{}:in", filter.column),
-                FilterOperator::Contains => format!("{}:cs", filter.column),
-                FilterOperator::ContainedBy => format!("{}:cd", filter.column),
-                FilterOperator::StrictlyLeft => format!("{}:sl", filter.column),
-                FilterOperator::StrictlyRight => format!("{}:sr", filter.column),
-                FilterOperator::NotExtendToRight => format!("{}:nxr", filter.column),
-                FilterOperator::NotExtendToLeft => format!("{}:nxl", filter.column),
-                FilterOperator::Adjacent => format!("{}:adj", filter.column),
+            let (key, value) = match filter.operator {
+                FilterOperator::Equal => (filter.column.clone(), format!("eq.{}", filter.value)),
+                FilterOperator::NotEqual => {
+                    (filter.column.clone(), format!("neq.{}", filter.value))
+                }
+                FilterOperator::GreaterThan => {
+                    (filter.column.clone(), format!("gt.{}", filter.value))
+                }
+                FilterOperator::GreaterThanOrEqual => {
+                    (filter.column.clone(), format!("gte.{}", filter.value))
+                }
+                FilterOperator::LessThan => (filter.column.clone(), format!("lt.{}", filter.value)),
+                FilterOperator::LessThanOrEqual => {
+                    (filter.column.clone(), format!("lte.{}", filter.value))
+                }
+                FilterOperator::Like => (filter.column.clone(), format!("like.{}", filter.value)),
+                FilterOperator::ILike => (filter.column.clone(), format!("ilike.{}", filter.value)),
+                FilterOperator::Is => (filter.column.clone(), format!("is.{}", filter.value)),
+                FilterOperator::In => (filter.column.clone(), format!("in.{}", filter.value)),
+                FilterOperator::Contains => (filter.column.clone(), format!("cs.{}", filter.value)),
+                FilterOperator::ContainedBy => {
+                    (filter.column.clone(), format!("cd.{}", filter.value))
+                }
+                FilterOperator::StrictlyLeft => {
+                    (filter.column.clone(), format!("sl.{}", filter.value))
+                }
+                FilterOperator::StrictlyRight => {
+                    (filter.column.clone(), format!("sr.{}", filter.value))
+                }
+                FilterOperator::NotExtendToRight => {
+                    (filter.column.clone(), format!("nxr.{}", filter.value))
+                }
+                FilterOperator::NotExtendToLeft => {
+                    (filter.column.clone(), format!("nxl.{}", filter.value))
+                }
+                FilterOperator::Adjacent => {
+                    (filter.column.clone(), format!("adj.{}", filter.value))
+                }
             };
 
-            params.insert(key, filter.value.clone());
+            params.insert(key, value);
         }
 
         params
@@ -374,6 +394,7 @@ impl QueryBuilder {
             url.query_pairs_mut().append_pair(&key, &value);
         }
 
+        debug!("Generated query URL: {}", url.as_str());
         let mut request = self.database.http_client.get(url.as_str());
 
         if self.single {

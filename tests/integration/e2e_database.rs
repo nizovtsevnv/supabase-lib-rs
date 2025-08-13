@@ -1,4 +1,5 @@
-use crate::common::*;
+mod common;
+use common::*;
 
 #[tokio::test]
 async fn e2e_database_crud_with_auth() {
@@ -77,4 +78,4 @@ async fn e2e_database_crud_with_auth() {
 	println!("delete: {:?}", deleted.as_ref().map(|v| v.len()));
 
 	// No assertions hard-failing: we print counts to understand RLS state across environments
-} 
+}

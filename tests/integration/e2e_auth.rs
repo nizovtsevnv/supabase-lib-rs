@@ -1,4 +1,5 @@
-use crate::common::*;
+mod common;
+use common::*;
 
 async_test!(e2e_auth_signin, || async {
 	let client = create_test_client();

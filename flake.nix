@@ -73,17 +73,10 @@
         # Simple pre-commit setup (using standard pre-commit tool)
         # We disable nix pre-commit integration for now to avoid complexity
 
-        # Development shell environment variables
+        # Development shell environment variables (only system/build variables)
         shellVars = {
-          RUST_LOG = "debug";
-          RUST_BACKTRACE = "1";
           PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig:${pkgs.postgresql}/lib/pkgconfig";
           LD_LIBRARY_PATH = "${pkgs.openssl}/lib:${pkgs.postgresql}/lib";
-
-          # Supabase test environment variables (can be overridden)
-          SUPABASE_URL = "http://localhost:54321";
-          SUPABASE_ANON_KEY = "test-anon-key";
-          SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
         };
 
         # Read crate metadata from Cargo.toml
@@ -106,26 +99,8 @@
             # Set environment variables
             ${builtins.concatStringsSep "\n" (pkgs.lib.mapAttrsToList (name: value: "export ${name}=\"${value}\"") shellVars)}
 
-            # Create .env file for development (only if missing)
-            if [ ! -f .env ]; then
-              cat > .env << EOF
-# Supabase Configuration
-SUPABASE_URL=http://localhost:54321
-SUPABASE_ANON_KEY=test-anon-key
-SUPABASE_SERVICE_ROLE_KEY=test-service-role-key
-
-# Rust Configuration
-RUST_LOG=debug
-RUST_BACKTRACE=1
-EOF
-              echo "Created default .env (edit with your project credentials)"
-            else
-              echo ".env found; leaving it unchanged"
-            fi
-
             # Ensure directories exist
             mkdir -p target
-            mkdir -p logs
 
             # Install pre-commit hooks automatically
             if [ ! -f .git/hooks/pre-commit ]; then
@@ -133,8 +108,6 @@ EOF
               pre-commit install
               echo "✅ Pre-commit hooks installed!"
             fi
-
-            echo "✅ Development environment ready with pre-commit hooks!"
           '';
         };
 

@@ -1,9 +1,10 @@
 .env
-.env.*
 .rust-analyzer
 Cargo.lock
+logs
 node_modules
 target
+tmp
 
 # OS generated files
 .DS_Store

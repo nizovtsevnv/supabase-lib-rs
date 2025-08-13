@@ -12,6 +12,8 @@ pub struct SupabaseConfig {
     pub url: String,
     /// API key (anon key for client-side operations)
     pub key: String,
+    /// Service role key for admin operations (optional)
+    pub service_role_key: Option<String>,
     /// HTTP client configuration
     pub http_config: HttpConfig,
     /// Auth configuration

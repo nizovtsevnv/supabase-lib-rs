@@ -230,7 +230,6 @@ impl Client {
                 .map_err(|e| Error::config(format!("Invalid authorization header: {}", e)))?,
         );
 
-
         // Add custom headers
         for (key, value) in &config.http_config.default_headers {
             let header_name = key

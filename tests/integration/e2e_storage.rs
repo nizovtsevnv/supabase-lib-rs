@@ -1,4 +1,5 @@
-use crate::common::*;
+mod common;
+use common::*;
 
 async_test!(e2e_storage_flow, || async {
 	let config = TestConfig::from_env();

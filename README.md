@@ -25,7 +25,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-supabase-lib-rs = "0.1.0"
+supabase-lib-rs = "0.1.1"
 tokio = { version = "1.0", features = ["full"] }
 ```
 
@@ -46,6 +46,13 @@ async fn main() -> Result<()> {
     let client = Client::new(
         "https://your-project.supabase.co",
         "your-anon-key"
+    )?;
+
+    // Or for admin operations with service role key
+    let admin_client = Client::new_with_service_role(
+        "https://your-project.supabase.co",
+        "your-anon-key",
+        "your-service-role-key"
     )?;
 
     // Authenticate user
@@ -440,9 +447,32 @@ cargo run --example basic_usage
 
 ### Environment Variables
 
+The library can be configured using environment variables. Copy `.env.example` to `.env` and fill in your actual values:
+
+```bash
+cp .env.example .env
+```
+
+**Required variables:**
+
 - `SUPABASE_URL` - Your Supabase project URL
 - `SUPABASE_ANON_KEY` - Your Supabase anonymous key
+
+**Optional variables:**
+
+- `SUPABASE_SERVICE_ROLE_KEY` - Service role key for admin operations
 - `RUST_LOG` - Log level (debug, info, warn, error)
+- `RUST_BACKTRACE` - Enable backtrace (0, 1, full)
+
+### Getting Your Supabase Keys
+
+1. Go to your [Supabase Dashboard](https://supabase.com/dashboard)
+2. Select your project
+3. Navigate to Settings > API
+4. Copy the keys:
+   - **Project URL** → `SUPABASE_URL`
+   - **anon public** → `SUPABASE_ANON_KEY`
+   - **service_role** → `SUPABASE_SERVICE_ROLE_KEY` (keep this secret!)
 
 ### Custom Configuration
 
@@ -452,6 +482,7 @@ use supabase::{Client, types::*};
 let config = SupabaseConfig {
     url: "https://your-project.supabase.co".to_string(),
     key: "your-anon-key".to_string(),
+    service_role_key: None,
     http_config: HttpConfig {
         timeout: 30,
         connect_timeout: 10,
