@@ -9,8 +9,8 @@ repository = "https://github.com/nizovtsevnv/supabase-lib-rs"
 homepage = "https://github.com/nizovtsevnv/supabase-lib-rs"
 documentation = "https://docs.rs/supabase-lib-rs"
 readme = "README.md"
-keywords = ["supabase", "database", "auth", "storage", "realtime", "wasm"]
-categories = ["api-bindings", "database", "web-programming", "authentication", "wasm"]
+keywords = ["supabase", "database", "auth", "storage", "realtime"]
+categories = ["api-bindings", "database", "web-programming", "wasm", "authentication"]
 exclude = [
     "tests/",
     "examples/",
