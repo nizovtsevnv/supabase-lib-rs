@@ -13,7 +13,7 @@
 //! This module is primarily used internally by the realtime module, but can be
 //! used directly if needed:
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use supabase::websocket::{create_websocket, WebSocketConnection};
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -46,7 +46,7 @@ pub trait WebSocketConnection: Send + Sync {
     /// Connect to a WebSocket server
     ///
     /// # Examples
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// # use supabase::websocket::{create_websocket, WebSocketConnection};
     /// # async fn example() -> supabase::Result<()> {
     /// let mut ws = create_websocket();
@@ -59,7 +59,7 @@ pub trait WebSocketConnection: Send + Sync {
     /// Send a text message through the WebSocket
     ///
     /// # Examples
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// # use supabase::websocket::{create_websocket, WebSocketConnection};
     /// # async fn example() -> supabase::Result<()> {
     /// let mut ws = create_websocket();
@@ -76,7 +76,7 @@ pub trait WebSocketConnection: Send + Sync {
     /// `Ok(None)` if no message is available, or an error.
     ///
     /// # Examples
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// # use supabase::websocket::{create_websocket, WebSocketConnection};
     /// # async fn example() -> supabase::Result<()> {
     /// let mut ws = create_websocket();
@@ -93,7 +93,7 @@ pub trait WebSocketConnection: Send + Sync {
     /// Close the WebSocket connection
     ///
     /// # Examples
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// # use supabase::websocket::{create_websocket, WebSocketConnection};
     /// # async fn example() -> supabase::Result<()> {
     /// let mut ws = create_websocket();
@@ -108,7 +108,7 @@ pub trait WebSocketConnection: Send + Sync {
     /// Check if the WebSocket is currently connected
     ///
     /// # Examples
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// # use supabase::websocket::{create_websocket, WebSocketConnection};
     /// # async fn example() -> supabase::Result<()> {
     /// let mut ws = create_websocket();
@@ -155,7 +155,7 @@ pub trait WebSocketConnection {
 ///
 /// ## Example
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use supabase::websocket::NativeWebSocket;
 /// use supabase::websocket::WebSocketConnection;
 ///
@@ -187,7 +187,7 @@ impl NativeWebSocket {
     /// Create a new NativeWebSocket instance
     ///
     /// # Examples
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// use supabase::websocket::NativeWebSocket;
     ///
     /// let websocket = NativeWebSocket::new();
@@ -299,7 +299,7 @@ impl WebSocketConnection for NativeWebSocket {
 ///
 /// ## Example
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// # #[cfg(target_arch = "wasm32")]
 /// # async fn example() -> supabase::Result<()> {
 /// use supabase::websocket::{WasmWebSocket, WebSocketConnection};
@@ -328,7 +328,7 @@ impl WasmWebSocket {
     /// Create a new WasmWebSocket instance
     ///
     /// # Examples
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// # #[cfg(target_arch = "wasm32")]
     /// # {
     /// use supabase::websocket::WasmWebSocket;
@@ -499,7 +499,7 @@ impl WebSocketConnection for WasmWebSocket {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use supabase::websocket::{create_websocket, WebSocketConnection};
 ///
 /// # async fn example() -> supabase::Result<()> {

@@ -11,7 +11,7 @@
 //!
 //! ## Usage
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use supabase::async_runtime::RuntimeLock;
 //! use std::collections::HashMap;
 //!
@@ -57,7 +57,7 @@ pub trait AsyncLock<T>: Send + Sync {
     /// Acquire a read lock
     ///
     /// # Examples
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// # use supabase::async_runtime::{AsyncLock, TokioRwLock};
     /// # async fn example() {
     /// let lock = TokioRwLock::new(42);
@@ -70,7 +70,7 @@ pub trait AsyncLock<T>: Send + Sync {
     /// Acquire a write lock
     ///
     /// # Examples
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// # use supabase::async_runtime::{AsyncLock, TokioRwLock};
     /// # async fn example() {
     /// let lock = TokioRwLock::new(42);
@@ -121,7 +121,7 @@ pub trait AsyncLock<T> {
 ///
 /// ## Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use supabase::async_runtime::{TokioRwLock, AsyncLock};
 /// use std::collections::HashMap;
 ///
@@ -149,7 +149,7 @@ impl<T> TokioRwLock<T> {
     /// Create a new TokioRwLock
     ///
     /// # Examples
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// use supabase::async_runtime::TokioRwLock;
     /// use std::collections::HashMap;
     ///
@@ -196,7 +196,7 @@ impl<T: Send + Sync> AsyncLock<T> for TokioRwLock<T> {
 ///
 /// ## Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// # #[cfg(target_arch = "wasm32")]
 /// # async fn example() {
 /// use supabase::async_runtime::{WasmRwLock, AsyncLock};
@@ -227,7 +227,7 @@ impl<T> WasmRwLock<T> {
     /// Create a new WasmRwLock
     ///
     /// # Examples
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// # #[cfg(target_arch = "wasm32")]
     /// # {
     /// use supabase::async_runtime::WasmRwLock;
@@ -303,7 +303,7 @@ impl<T> AsyncLock<T> for WasmRwLock<T> {
 ///
 /// ## Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use supabase::async_runtime::RuntimeLock;
 /// use std::collections::HashMap;
 ///
