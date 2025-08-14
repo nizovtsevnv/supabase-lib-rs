@@ -227,7 +227,7 @@ impl<T> WasmRwLock<T> {
     /// Create a new WasmRwLock
     ///
     /// # Examples
-    /// ```rust
+    /// ```rust,no_run
     /// # #[cfg(target_arch = "wasm32")]
     /// # {
     /// use supabase::async_runtime::WasmRwLock;

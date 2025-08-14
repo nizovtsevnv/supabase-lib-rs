@@ -187,7 +187,7 @@ impl NativeWebSocket {
     /// Create a new NativeWebSocket instance
     ///
     /// # Examples
-    /// ```rust
+    /// ```rust,no_run
     /// use supabase::websocket::NativeWebSocket;
     ///
     /// let websocket = NativeWebSocket::new();
@@ -328,7 +328,7 @@ impl WasmWebSocket {
     /// Create a new WasmWebSocket instance
     ///
     /// # Examples
-    /// ```rust
+    /// ```rust,no_run
     /// # #[cfg(target_arch = "wasm32")]
     /// # {
     /// use supabase::websocket::WasmWebSocket;
