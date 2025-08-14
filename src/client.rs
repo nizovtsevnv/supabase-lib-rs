@@ -1,15 +1,29 @@
 //! Main Supabase client
 
 use crate::{
-    auth::Auth,
-    database::Database,
     error::{Error, Result},
-    realtime::Realtime,
-    storage::Storage,
     types::{AuthConfig, DatabaseConfig, HttpConfig, StorageConfig, SupabaseConfig},
 };
+
+#[cfg(feature = "auth")]
+use crate::auth::Auth;
+
+#[cfg(feature = "database")]
+use crate::database::Database;
+
+#[cfg(feature = "storage")]
+use crate::storage::Storage;
+
+#[cfg(feature = "functions")]
+use crate::functions::Functions;
+
+#[cfg(feature = "realtime")]
+use crate::realtime::Realtime;
 use reqwest::{header::HeaderMap, Client as HttpClient};
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc};
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Duration;
 use tracing::{debug, error, info};
 use url::Url;
 
@@ -21,12 +35,20 @@ pub struct Client {
     /// Client configuration
     config: Arc<SupabaseConfig>,
     /// Authentication module
+    #[cfg(feature = "auth")]
     auth: Auth,
     /// Database module
+    #[cfg(feature = "database")]
     database: Database,
     /// Storage module
+    #[cfg(feature = "storage")]
     storage: Storage,
+
+    #[cfg(feature = "functions")]
+    functions: Functions,
+
     /// Realtime module
+    #[cfg(feature = "realtime")]
     realtime: Realtime,
 }
 
@@ -133,10 +155,20 @@ impl Client {
         let http_client = Arc::new(Self::build_http_client(&config)?);
         let config = Arc::new(config);
 
-        // Initialize modules
+        // Initialize modules conditionally based on features
+        #[cfg(feature = "auth")]
         let auth = Auth::new(Arc::clone(&config), Arc::clone(&http_client))?;
+
+        #[cfg(feature = "database")]
         let database = Database::new(Arc::clone(&config), Arc::clone(&http_client))?;
+
+        #[cfg(feature = "storage")]
         let storage = Storage::new(Arc::clone(&config), Arc::clone(&http_client))?;
+
+        #[cfg(feature = "functions")]
+        let functions = Functions::new(Arc::clone(&config), Arc::clone(&http_client))?;
+
+        #[cfg(feature = "realtime")]
         let realtime = Realtime::new(Arc::clone(&config))?;
 
         info!("Supabase client initialized successfully");
@@ -144,29 +176,45 @@ impl Client {
         Ok(Self {
             http_client,
             config,
+            #[cfg(feature = "auth")]
             auth,
+            #[cfg(feature = "database")]
             database,
+            #[cfg(feature = "storage")]
             storage,
+            #[cfg(feature = "functions")]
+            functions,
+            #[cfg(feature = "realtime")]
             realtime,
         })
     }
 
     /// Get the authentication module
+    #[cfg(feature = "auth")]
     pub fn auth(&self) -> &Auth {
         &self.auth
     }
 
     /// Get the database module
+    #[cfg(feature = "database")]
     pub fn database(&self) -> &Database {
         &self.database
     }
 
     /// Get the storage module
+    #[cfg(feature = "storage")]
     pub fn storage(&self) -> &Storage {
         &self.storage
     }
 
+    /// Get the functions module
+    #[cfg(feature = "functions")]
+    pub fn functions(&self) -> &Functions {
+        &self.functions
+    }
+
     /// Get the realtime module
+    #[cfg(feature = "realtime")]
     pub fn realtime(&self) -> &Realtime {
         &self.realtime
     }
@@ -192,21 +240,25 @@ impl Client {
     }
 
     /// Set a custom authorization header (JWT token)
+    #[cfg(feature = "auth")]
     pub async fn set_auth(&self, token: &str) -> Result<()> {
         self.auth.set_session_token(token).await
     }
 
     /// Clear the current authorization
+    #[cfg(feature = "auth")]
     pub async fn clear_auth(&self) -> Result<()> {
         self.auth.clear_session().await
     }
 
     /// Check if client is authenticated
+    #[cfg(feature = "auth")]
     pub fn is_authenticated(&self) -> bool {
         self.auth.is_authenticated()
     }
 
     /// Get current user if authenticated
+    #[cfg(feature = "auth")]
     pub async fn current_user(&self) -> Result<Option<crate::auth::User>> {
         self.auth.current_user().await
     }
@@ -241,12 +293,19 @@ impl Client {
             headers.insert(header_name, header_value);
         }
 
+        #[cfg(not(target_arch = "wasm32"))]
         let client = HttpClient::builder()
             .timeout(Duration::from_secs(config.http_config.timeout))
             .connect_timeout(Duration::from_secs(config.http_config.connect_timeout))
             .redirect(reqwest::redirect::Policy::limited(
                 config.http_config.max_redirects,
             ))
+            .default_headers(headers)
+            .build()
+            .map_err(|e| Error::config(format!("Failed to build HTTP client: {}", e)))?;
+
+        #[cfg(target_arch = "wasm32")]
+        let client = HttpClient::builder()
             .default_headers(headers)
             .build()
             .map_err(|e| Error::config(format!("Failed to build HTTP client: {}", e)))?;
@@ -294,5 +353,34 @@ impl Client {
 
         let version_info = response.json().await?;
         Ok(version_info)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_client_creation() {
+        let client = Client::new("https://test.supabase.co", "test-key");
+        assert!(client.is_ok());
+    }
+
+    #[test]
+    fn test_invalid_url() {
+        let client = Client::new("invalid-url", "test-key");
+        assert!(client.is_err());
+    }
+
+    #[test]
+    fn test_client_url() {
+        let client = Client::new("https://test.supabase.co", "test-key").unwrap();
+        assert_eq!(client.url(), "https://test.supabase.co");
+    }
+
+    #[test]
+    fn test_client_key() {
+        let client = Client::new("https://test.supabase.co", "test-key").unwrap();
+        assert_eq!(client.key(), "test-key");
     }
 }

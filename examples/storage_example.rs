@@ -222,12 +222,22 @@ async fn main() -> Result<()> {
     println!("\n💾 Example 12: Upload from filesystem (demo)");
     // Create a temporary file for demonstration
     let temp_file_path = "/tmp/supabase_test.txt";
-    if tokio::fs::write(temp_file_path, "Test content from filesystem")
-        .await
-        .is_ok()
-    {
+    if std::fs::write(temp_file_path, "Test content from filesystem").is_ok() {
+        let file_content = match std::fs::read(temp_file_path) {
+            Ok(content) => content,
+            Err(e) => {
+                println!("❌ Failed to read temp file: {}", e);
+                return Ok(());
+            }
+        };
+
         match storage
-            .upload_file(test_bucket_id, "uploads/from_fs.txt", temp_file_path, None)
+            .upload(
+                test_bucket_id,
+                "uploads/from_fs.txt",
+                file_content.into(),
+                None,
+            )
             .await
         {
             Ok(response) => {
@@ -240,7 +250,7 @@ async fn main() -> Result<()> {
         }
 
         // Clean up temp file
-        let _ = tokio::fs::remove_file(temp_file_path).await;
+        let _ = std::fs::remove_file(temp_file_path);
     } else {
         println!("⚠️ Could not create temporary file for demo");
     }

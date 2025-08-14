@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 /// Configuration for Supabase client
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct SupabaseConfig {
     /// Project URL (e.g., https://your-project.supabase.co)
     pub url: String,
@@ -231,3 +231,47 @@ pub type Headers = HashMap<String, String>;
 
 /// Query parameters type for HTTP requests
 pub type QueryParams = HashMap<String, String>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_http_config_default() {
+        let config = HttpConfig::default();
+        assert_eq!(config.timeout, 60);
+        assert_eq!(config.connect_timeout, 10);
+        assert_eq!(config.max_redirects, 10);
+    }
+
+    #[test]
+    fn test_auth_config_default() {
+        let config = AuthConfig::default();
+        assert!(config.auto_refresh_token);
+        assert_eq!(config.refresh_threshold, 300);
+        assert!(config.persist_session);
+    }
+
+    #[test]
+    fn test_filter_operator_serialization() {
+        use serde_json;
+        let op = FilterOperator::Equal;
+        let serialized = serde_json::to_string(&op).unwrap();
+        assert_eq!(serialized, "\"eq\"");
+    }
+
+    #[test]
+    fn test_order_direction() {
+        use serde_json;
+        let dir = OrderDirection::Ascending;
+        let serialized = serde_json::to_string(&dir).unwrap();
+        assert_eq!(serialized, "\"asc\"");
+    }
+
+    #[test]
+    fn test_http_method_as_str() {
+        assert_eq!(HttpMethod::Get.as_str(), "GET");
+        assert_eq!(HttpMethod::Post.as_str(), "POST");
+        assert_eq!(HttpMethod::Put.as_str(), "PUT");
+    }
+}

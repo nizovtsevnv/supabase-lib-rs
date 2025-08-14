@@ -94,9 +94,16 @@ async fn main() -> Result<()> {
     let _storage = client.storage();
     println!("  📁 Storage client: ✅");
 
-    // Test realtime client
-    let _realtime = client.realtime();
-    println!("  ⚡ Realtime client: ✅");
+    // Test realtime client (only if feature is enabled)
+    #[cfg(feature = "realtime")]
+    {
+        let _realtime = client.realtime();
+        println!("  ⚡ Realtime client: ✅");
+    }
+    #[cfg(not(feature = "realtime"))]
+    {
+        println!("  ⚡ Realtime client: ⚠️  (disabled, enable with --features realtime)");
+    }
 
     println!("\n✨ Basic usage example completed successfully!");
     println!("💡 To run full integration tests, ensure you have a running Supabase instance.");

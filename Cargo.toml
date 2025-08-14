@@ -1,21 +1,38 @@
 [package]
 name = "supabase-lib-rs"
-version = "0.1.1"
-edition = "2021"
-description = "A comprehensive Rust client library for Supabase"
+version = "0.2.0"
+description = "A comprehensive, production-ready Rust client library for Supabase with full cross-platform support (native + WASM)"
+authors = ["Nizovtsev Nikolay <nizovtsevnv@users.noreply.github.com>"]
 license = "MIT"
+edition = "2021"
 repository = "https://github.com/nizovtsevnv/supabase-lib-rs"
-readme = "README.md"
 homepage = "https://github.com/nizovtsevnv/supabase-lib-rs"
 documentation = "https://docs.rs/supabase-lib-rs"
-keywords = ["supabase", "database", "auth", "storage", "realtime"]
-categories = ["web-programming", "database", "authentication"]
+readme = "README.md"
+keywords = ["supabase", "database", "auth", "storage", "realtime", "wasm"]
+categories = ["api-bindings", "database", "web-programming", "authentication", "wasm"]
+exclude = [
+    "tests/",
+    "examples/",
+    "docs/",
+    "scripts/",
+    "volumes/",
+    "docker-compose.yml",
+    ".env*",
+    "justfile",
+    "flake.*",
+    "deny.toml",
+    "CLAUDE.md",
+    "CONTRIBUTING.md",
+    "TESTING.md"
+]
 
 [badges]
 docsrs = { repository = "https://docs.rs/supabase-lib-rs" }
 
 [lib]
 name = "supabase"
+path = "src/lib.rs"
 crate-type = ["rlib", "staticlib"]
 
 [package.metadata.docs.rs]
@@ -24,13 +41,6 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-# HTTP client
-reqwest = { version = "0.12", features = ["json", "rustls-tls", "multipart"], default-features = false }
-
-# Async runtime
-tokio = { version = "1.0", features = ["full"] }
-tokio-tungstenite = { version = "0.21", features = ["rustls-tls-native-roots"] }
-
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -41,11 +51,11 @@ chrono = { version = "0.4", features = ["serde"] }
 # URL handling
 url = "2.4"
 
-# UUID support
+# UUID support (always available)
 uuid = { version = "1.6", features = ["v4", "serde"] }
 
-# JWT handling
-jsonwebtoken = "9.2"
+# JWT handling (optional for auth feature)
+jsonwebtoken = { version = "9.2", optional = true }
 
 # Base64 encoding
 base64 = "0.21"
@@ -60,19 +70,78 @@ tracing-subscriber = "0.3"
 
 # Utilities
 bytes = "1.5"
-futures-util = "0.3"
+futures-util = { version = "0.3", features = ["sink"], optional = true }
+async-trait = { version = "0.1", optional = true }
+
+# Native dependencies (non-WASM)
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# HTTP client
+reqwest = { version = "0.12", features = [
+  "json",
+  "rustls-tls",
+  "multipart",
+], default-features = false }
+
+# Async runtime (optional for realtime)
+tokio = { version = "1.0", features = ["full"], optional = true }
+tokio-tungstenite = { version = "0.21", features = ["rustls-tls-native-roots"], optional = true }
+
+
+# WASM dependencies
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# HTTP client for WASM
+reqwest = { version = "0.12", features = ["json"], default-features = false }
+
+# WASM-specific UUID features
+uuid = { version = "1.6", features = ["v4", "serde", "js"] }
+
+# Getrandom for WASM
+getrandom = { version = "0.2", features = ["js"] }
+
+# WASM runtime (optional for wasm feature)
+wasm-bindgen = { version = "0.2", optional = true }
+wasm-bindgen-futures = { version = "0.4", optional = true }
+web-sys = { version = "0.3", features = ["console", "WebSocket", "MessageEvent", "CloseEvent", "ErrorEvent"], optional = true }
+js-sys = { version = "0.3", optional = true }
 
 [dev-dependencies]
-tokio-test = "0.4"
-mockito = "1.2"
-wiremock = "0.5"
+tokio = { version = "1.0", features = ["full"] }
+tracing-subscriber = "0.3"
+dioxus = "0.6"
+dioxus-web = "0.6"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = ["console"] }
+uuid = { version = "1.0", features = ["v4"] }
+chrono = "0.4"
 
+# Features for conditional compilation
 [features]
-default = ["auth", "database", "storage", "realtime"]
-auth = []
+default = ["auth", "database", "storage", "native"]
+
+# Core features
+auth = ["jsonwebtoken"]
 database = []
 storage = []
-realtime = []
+functions = []
+realtime = ["tokio-tungstenite", "futures-util", "async-trait"]
+
+# Platform features
+native = ["tokio"]
+wasm = [
+    "wasm-bindgen",
+    "wasm-bindgen-futures",
+    "web-sys/console",
+    "web-sys/Window",
+    "web-sys/WebSocket",
+    "web-sys/MessageEvent",
+    "web-sys/CloseEvent",
+    "web-sys/ErrorEvent",
+    "js-sys"
+]
+
+# All features for testing
+all = ["auth", "database", "storage", "functions", "realtime", "native", "wasm"]
 
 [[example]]
 name = "basic_usage"
@@ -93,3 +162,7 @@ path = "examples/storage_example.rs"
 [[example]]
 name = "realtime_example"
 path = "examples/realtime_example.rs"
+
+[[example]]
+name = "wasm_example"
+path = "examples/wasm_example.rs"

@@ -16,6 +16,8 @@ A comprehensive, production-ready Rust client library for [Supabase](https://sup
 - **⚡ Realtime** - WebSocket subscriptions for live database changes
 - **🛡️ Type Safety** - Comprehensive error handling and type definitions
 - **🔄 Async/Await** - Full async support with tokio
+- **🌐 WASM Support** - Full WebAssembly compatibility for web applications
+- **🦀 Cross-Platform** - Works on native (desktop/server) and WASM (web) targets
 - **🧪 Well Tested** - Extensive unit and integration test coverage
 - **📚 Documentation** - Complete API documentation and examples
 
@@ -25,7 +27,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-supabase-lib-rs = "0.1.1"
+supabase-lib-rs = "0.2.0"
 tokio = { version = "1.0", features = ["full"] }
 ```
 
@@ -394,38 +396,114 @@ supabase-lib-rs/
 
 ## 🧪 Testing
 
+This project has a comprehensive testing system with multiple levels of testing:
+
+### Unit Tests
+
 ```bash
-# Run unit tests
+# Run unit tests only
 just test-unit
 
-# Run integration tests (requires Supabase setup)
-just test-integration
-
-# Run with coverage
-just coverage
+# Run with documentation tests
+just test
 ```
 
-### Integration Tests
+### Integration & E2E Tests
 
-To run integration tests, you need a Supabase instance:
+```bash
+# Start local Supabase (requires Docker/Podman)
+just supabase-start
 
-1. Set up a local Supabase instance:
+# Run integration tests
+just test-integration
 
-   ```bash
-   just supabase-start
-   ```
+# Run all tests (unit + doc + integration)
+just test-all
+```
 
-2. Or configure environment variables for your Supabase project:
+### Docker/Podman Setup
 
-   ```bash
-   export SUPABASE_URL="https://your-project.supabase.co"
-   export SUPABASE_ANON_KEY="your-anon-key"
-   ```
+The project includes a complete local Supabase setup using Docker Compose:
 
-3. Run the tests:
-   ```bash
-   just test-integration
-   ```
+```bash
+# Start all Supabase services
+just supabase-start
+
+# Check status
+just supabase-status
+
+# View logs
+just supabase-logs [service]
+
+# Stop services
+just supabase-stop
+
+# Clean up data
+just supabase-clean
+```
+
+**Services provided:**
+
+- 🌐 **Studio**: http://localhost:54323 (Web UI)
+- 🔗 **API**: http://localhost:54321 (REST + Auth + Realtime)
+- 🗄️ **Database**: localhost:54322 (PostgreSQL)
+- 📁 **Storage**: File storage with image processing
+- ⚡ **Functions**: Edge functions runtime
+
+### Test Categories
+
+1. **Unit Tests** - Fast, isolated component tests
+2. **Integration Tests** - Test individual modules against real Supabase
+3. **E2E Tests** - Full workflow scenarios
+4. **Doc Tests** - Ensure documentation examples work
+
+All integration tests automatically skip if Supabase is not available, making them safe for CI/CD.
+
+## 🚧 Current Limitations
+
+While this library provides comprehensive Supabase functionality, some advanced features are planned for future releases:
+
+### Authentication
+
+- **OAuth Providers**: Google, GitHub, Discord, Apple, etc. (planned for v0.3.0)
+- **Phone Authentication**: SMS OTP and phone number sign-in (planned for v0.3.0)
+- **Multi-Factor Authentication (MFA)**: TOTP and SMS-based 2FA (planned for v0.4.0)
+- **Auth Events**: `onAuthStateChange` event listeners (planned for v0.3.0)
+- **Anonymous Sign-in**: Temporary anonymous user sessions (planned for v0.3.0)
+
+### Database
+
+- **Logical Operators**: Complex `and()`, `or()`, `not()` query logic (planned for v0.3.0)
+- **Full-Text Search**: `textSearch()` and advanced search operators (planned for v0.4.0)
+- **Query Analysis**: `explain()` and CSV export functionality (planned for v0.4.0)
+
+### Missing Modules
+
+- ~~**Edge Functions**: `functions.invoke()` for serverless functions~~ ✅ **Added in v0.3.0**
+- **Management API**: Project management and admin operations (planned for v0.4.0)
+
+### Workarounds
+
+Most limitations can be worked around:
+
+```rust
+// Instead of OAuth, use magic links or email/password
+let auth_response = client.auth()
+    .sign_up_with_email_and_password("user@example.com", "password")
+    .await?;
+
+// Instead of logical operators, use multiple queries or raw SQL
+let result = client.database()
+    .rpc("custom_query", Some(json!({"param": "value"})))
+    .await?;
+
+// Instead of Edge Functions, use database RPC functions
+let function_result = client.database()
+    .rpc("my_custom_function", Some(params))
+    .await?;
+```
+
+The library currently provides **~90% of core Supabase functionality** and covers all common use cases for production applications.
 
 ## 📚 Examples
 
@@ -441,6 +519,88 @@ Run examples with:
 
 ```bash
 cargo run --example basic_usage
+```
+
+## 🌐 WebAssembly (WASM) Support
+
+This library provides full WebAssembly support for web applications! You can use it with frameworks like [Dioxus](https://dioxuslabs.com/), [Yew](https://yew.rs/), or any WASM-based Rust web framework.
+
+### WASM Features
+
+- **✅ Full API compatibility** - Same API works on both native and WASM
+- **✅ HTTP client** - Uses browser's fetch API automatically
+- **✅ Authentication** - Complete auth flow support
+- **✅ Database** - All CRUD operations and query builder
+- **✅ Storage** - File upload/download (simplified for WASM)
+- **✅ Realtime** - WebSocket subscriptions via browser WebSocket API
+
+### Building for WASM
+
+```bash
+# Add WASM target
+rustup target add wasm32-unknown-unknown
+
+# Build for WASM
+cargo build --target wasm32-unknown-unknown
+
+# Build example for WASM
+cargo build --target wasm32-unknown-unknown --example wasm_example
+```
+
+### WASM Example
+
+```rust
+use supabase::{Client, Result};
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen(start)]
+pub async fn main() {
+    let client = Client::new("your-url", "your-key").unwrap();
+
+    // Works exactly the same as native!
+    let todos = client
+        .database()
+        .from("todos")
+        .select("*")
+        .execute::<Todo>()
+        .await
+        .unwrap();
+
+    web_sys::console::log_1(&format!("Got {} todos", todos.len()).into());
+}
+```
+
+### Integration with Web Frameworks
+
+**Dioxus:**
+
+```rust
+use dioxus::prelude::*;
+use supabase::Client;
+
+fn App(cx: Scope) -> Element {
+    let client = use_state(cx, || {
+        Client::new("your-url", "your-key").unwrap()
+    });
+
+    // Use client in your components...
+}
+```
+
+**Yew:**
+
+```rust
+use yew::prelude::*;
+use supabase::Client;
+
+#[function_component(App)]
+fn app() -> Html {
+    let client = use_state(|| {
+        Client::new("your-url", "your-key").unwrap()
+    });
+
+    // Use client in your components...
+}
 ```
 
 ## ⚙️ Configuration

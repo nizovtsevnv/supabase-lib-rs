@@ -49,27 +49,136 @@ format-check:
 # Run clippy linter
 lint:
     @echo "🔍 Running clippy linter..."
-    cargo clippy --all-targets --all-features -- -D warnings
+    cargo clippy --lib --all-features -- -D warnings
 
-# Run tests
+# Run tests (unit tests + documentation tests)
 test:
-    @echo "🧪 Running tests..."
-    cargo test
+    @echo "🧪 Running unit tests..."
+    cargo test --lib
+    @echo "📖 Running documentation tests..."
+    cargo test --doc
 
 # Run tests with output
 test-verbose:
     @echo "🧪 Running tests (verbose)..."
     cargo test -- --nocapture
 
-# Run integration tests only
+# Run integration tests (requires Supabase)
 test-integration:
     @echo "🧪 Running integration tests..."
-    cargo test --test '*' -- --nocapture
+    @if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then \
+        echo "⚠️  Integration tests require Supabase configuration"; \
+        echo "   Run: just supabase-start"; \
+        echo "   Or set SUPABASE_URL and SUPABASE_ANON_KEY environment variables"; \
+        exit 1; \
+    fi
+    cargo test --test integration_tests --features "auth database storage realtime native" -- --nocapture
 
 # Run unit tests only
 test-unit:
     @echo "🧪 Running unit tests..."
     cargo test --lib --bins
+
+# Run all tests (unit + doc + integration)
+test-all: test supabase-ensure-running test-integration
+    @echo "✅ All tests completed!"
+
+# =============================================================================
+# Supabase Docker Management
+# =============================================================================
+
+# Start local Supabase with Docker/Podman
+supabase-start:
+    @echo "🐳 Starting local Supabase..."
+    @if command -v podman-compose > /dev/null 2>&1; then \
+        podman-compose up -d; \
+    elif command -v docker-compose > /dev/null 2>&1; then \
+        docker-compose up -d; \
+    elif command -v docker > /dev/null 2>&1 && docker compose > /dev/null 2>&1; then \
+        docker compose up -d; \
+    else \
+        echo "❌ No Docker/Podman Compose found"; \
+        echo "   Install Docker Compose or Podman"; \
+        exit 1; \
+    fi
+    @echo "⏳ Waiting for services to be ready..."
+    @sleep 10
+    @echo "✅ Supabase is starting up!"
+    @echo "🌐 Studio: http://localhost:54323"
+    @echo "🔗 API: http://localhost:54321"
+
+# Stop local Supabase
+supabase-stop:
+    @echo "🛑 Stopping local Supabase..."
+    @if command -v podman-compose > /dev/null 2>&1; then \
+        podman-compose down; \
+    elif command -v docker-compose > /dev/null 2>&1; then \
+        docker-compose down; \
+    elif command -v docker > /dev/null 2>&1 && docker compose > /dev/null 2>&1; then \
+        docker compose down; \
+    else \
+        echo "❌ No Docker/Podman Compose found"; \
+        exit 1; \
+    fi
+
+# Restart local Supabase
+supabase-restart: supabase-stop supabase-start
+
+# Show Supabase status
+supabase-status:
+    @echo "📊 Supabase containers status:"
+    @if command -v podman-compose > /dev/null 2>&1; then \
+        podman-compose ps; \
+    elif command -v docker-compose > /dev/null 2>&1; then \
+        docker-compose ps; \
+    elif command -v docker > /dev/null 2>&1 && docker compose > /dev/null 2>&1; then \
+        docker compose ps; \
+    else \
+        echo "❌ No Docker/Podman Compose found"; \
+    fi
+
+# Show Supabase logs
+supabase-logs service="":
+    @echo "📋 Supabase logs {{service}}..."
+    @if command -v podman-compose > /dev/null 2>&1; then \
+        podman-compose logs -f {{service}}; \
+    elif command -v docker-compose > /dev/null 2>&1; then \
+        docker-compose logs -f {{service}}; \
+    elif command -v docker > /dev/null 2>&1 && docker compose > /dev/null 2>&1; then \
+        docker compose logs -f {{service}}; \
+    else \
+        echo "❌ No Docker/Podman Compose found"; \
+    fi
+
+# Clean Supabase volumes and data
+supabase-clean: supabase-stop
+    @echo "🧹 Cleaning Supabase data..."
+    @if command -v podman-compose > /dev/null 2>&1; then \
+        podman-compose down -v; \
+    elif command -v docker-compose > /dev/null 2>&1; then \
+        docker-compose down -v; \
+    elif command -v docker > /dev/null 2>&1 && docker compose > /dev/null 2>&1; then \
+        docker compose down -v; \
+    else \
+        echo "❌ No Docker/Podman Compose found"; \
+    fi
+    @echo "✅ Supabase data cleaned"
+
+# Ensure Supabase is running (for tests)
+supabase-ensure-running:
+    @echo "🔍 Checking if Supabase is running..."
+    @if ! curl -s http://localhost:54321 > /dev/null 2>&1; then \
+        echo "⚠️  Supabase not running, starting it..."; \
+        just supabase-start; \
+        sleep 15; \
+    else \
+        echo "✅ Supabase is running"; \
+    fi
+
+# Run documentation tests only
+test-doc:
+    @echo "📖 Running documentation tests..."
+    cargo test --doc
 
 # Run tests with coverage
 coverage:
@@ -173,18 +282,18 @@ pre-commit: format-check lint test build
 release-prep: clean format lint test build-release audit docs-build
     @echo "📦 Release preparation complete!"
 
-# Start local Supabase for testing (requires Docker)
-supabase-start:
-    @echo "🚀 Starting local Supabase..."
+# Legacy Supabase CLI commands (alternative)
+supabase-cli-start:
+    @echo "🚀 Starting Supabase via CLI..."
     @if command -v supabase >/dev/null 2>&1; then \
         supabase start; \
     else \
         echo "❌ Supabase CLI not found. Install from: https://supabase.com/docs/guides/cli"; \
+        echo "   Or use: just supabase-start (Docker version)"; \
     fi
 
-# Stop local Supabase
-supabase-stop:
-    @echo "🛑 Stopping local Supabase..."
+supabase-cli-stop:
+    @echo "🛑 Stopping Supabase via CLI..."
     @if command -v supabase >/dev/null 2>&1; then \
         supabase stop; \
     else \

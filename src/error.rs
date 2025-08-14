@@ -21,6 +21,7 @@ pub enum Error {
     UrlParse(#[from] url::ParseError),
 
     /// JWT token errors
+    #[cfg(feature = "auth")]
     #[error("JWT error: {0}")]
     Jwt(#[from] jsonwebtoken::errors::Error),
 
@@ -67,6 +68,10 @@ pub enum Error {
     /// Generic errors
     #[error("{message}")]
     Generic { message: String },
+
+    /// Functions errors
+    #[error("Functions error: {message}")]
+    Functions { message: String },
 }
 
 impl Error {
@@ -146,6 +151,13 @@ impl Error {
             message: message.into(),
         }
     }
+
+    /// Create a functions error
+    pub fn functions<T: Into<String>>(message: T) -> Self {
+        Self::Functions {
+            message: message.into(),
+        }
+    }
 }
 
 /// Handle HTTP status codes and convert to appropriate errors
@@ -162,5 +174,28 @@ impl From<reqwest::StatusCode> for Error {
             reqwest::StatusCode::GATEWAY_TIMEOUT => Self::network("Gateway timeout"),
             _ => Self::network(format!("HTTP error: {}", status)),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_error_creation() {
+        let error = Error::auth("test message");
+        assert_eq!(error.to_string(), "Authentication error: test message");
+    }
+
+    #[test]
+    fn test_database_error() {
+        let error = Error::database("query failed");
+        assert_eq!(error.to_string(), "Database error: query failed");
+    }
+
+    #[test]
+    fn test_from_status_code() {
+        let error = Error::from(reqwest::StatusCode::NOT_FOUND);
+        assert_eq!(error.to_string(), "Not found: Resource not found");
     }
 }

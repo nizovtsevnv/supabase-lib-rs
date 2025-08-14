@@ -32,6 +32,7 @@ pub fn create_test_client_with_config(test_config: TestConfig) -> Client {
     let config = SupabaseConfig {
         url: test_config.url,
         key: test_config.key,
+        service_role_key: None,
         http_config: HttpConfig::default(),
         auth_config: AuthConfig::default(),
         database_config: DatabaseConfig::default(),

@@ -5,9 +5,14 @@ use crate::{
     types::{SupabaseConfig, Timestamp},
 };
 use bytes::Bytes;
+
+#[cfg(target_arch = "wasm32")]
+use reqwest::Client as HttpClient;
+#[cfg(not(target_arch = "wasm32"))]
 use reqwest::{multipart, Client as HttpClient};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, path::Path, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
+
 use tracing::{debug, info};
 use url::Url;
 
@@ -269,6 +274,7 @@ impl Storage {
     }
 
     /// Upload a file from bytes
+    #[cfg(not(target_arch = "wasm32"))]
     pub async fn upload(
         &self,
         bucket_id: &str,
@@ -317,12 +323,66 @@ impl Storage {
 
         let upload_response: UploadResponse = response.json().await?;
         info!("Uploaded file successfully: {}", path);
+        Ok(upload_response)
+    }
+
+    /// Upload a file from bytes (WASM version)
+    ///
+    /// Note: WASM version uses simpler body upload due to multipart limitations
+    #[cfg(target_arch = "wasm32")]
+    pub async fn upload(
+        &self,
+        bucket_id: &str,
+        path: &str,
+        file_body: Bytes,
+        options: Option<FileOptions>,
+    ) -> Result<UploadResponse> {
+        debug!(
+            "Uploading file to bucket: {} at path: {} (WASM)",
+            bucket_id, path
+        );
+
+        let options = options.unwrap_or_default();
+
+        let url = format!(
+            "{}/storage/v1/object/{}/{}",
+            self.config.url, bucket_id, path
+        );
+
+        let mut request = self.http_client.post(&url).body(file_body);
+
+        if let Some(content_type) = options.content_type {
+            request = request.header("Content-Type", content_type);
+        }
+
+        if let Some(cache_control) = options.cache_control {
+            request = request.header("Cache-Control", cache_control);
+        }
+
+        if options.upsert {
+            request = request.header("x-upsert", "true");
+        }
+
+        let response = request.send().await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_msg = match response.text().await {
+                Ok(text) => text,
+                Err(_) => format!("Upload failed with status: {}", status),
+            };
+            return Err(Error::storage(error_msg));
+        }
+
+        let upload_response: UploadResponse = response.json().await?;
+        info!("Uploaded file successfully: {}", path);
 
         Ok(upload_response)
     }
 
-    /// Upload a file from local filesystem
-    pub async fn upload_file<P: AsRef<Path>>(
+    /// Upload a file from local filesystem (Native only, requires tokio)
+    #[cfg(all(not(target_arch = "wasm32"), feature = "native"))]
+    pub async fn upload_file<P: AsRef<std::path::Path>>(
         &self,
         bucket_id: &str,
         path: &str,
