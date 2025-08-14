@@ -465,15 +465,19 @@ While this library provides comprehensive Supabase functionality, some advanced 
 
 ### Authentication
 
-- **OAuth Providers**: Google, GitHub, Discord, Apple, etc. (planned for v0.3.0)
-- **Phone Authentication**: SMS OTP and phone number sign-in (planned for v0.3.0)
+- **OAuth Providers**: Google, GitHub, Discord, Apple, etc. (planned for v0.3.1)
+- **Phone Authentication**: SMS OTP and phone number sign-in (planned for v0.3.1)
 - **Multi-Factor Authentication (MFA)**: TOTP and SMS-based 2FA (planned for v0.4.0)
-- **Auth Events**: `onAuthStateChange` event listeners (planned for v0.3.0)
-- **Anonymous Sign-in**: Temporary anonymous user sessions (planned for v0.3.0)
+- **Auth Events**: `onAuthStateChange` event listeners (planned for v0.3.1)
+- **Anonymous Sign-in**: Temporary anonymous user sessions (planned for v0.3.1)
 
 ### Database
 
-- **Logical Operators**: Complex `and()`, `or()`, `not()` query logic (planned for v0.3.0)
+- ✅ **Logical Operators**: Complex `and()`, `or()`, `not()` query logic (**Added in v0.3.0**)
+- ✅ **Query Joins**: `inner_join()`, `left_join()` with aliases (**Added in v0.3.0**)
+- ✅ **Batch Operations**: `upsert()`, `bulk_insert()`, `bulk_upsert()` (**Added in v0.3.0**)
+- ✅ **Raw SQL Support**: `raw_sql()`, `prepared_statement()`, `count_query()` (**Added in v0.3.0**)
+- ✅ **Database Transactions**: Full transaction support with builder pattern (**Added in v0.3.0**)
 - **Full-Text Search**: `textSearch()` and advanced search operators (planned for v0.4.0)
 - **Query Analysis**: `explain()` and CSV export functionality (planned for v0.4.0)
 
@@ -503,7 +507,53 @@ let function_result = client.database()
     .await?;
 ```
 
-The library currently provides **~90% of core Supabase functionality** and covers all common use cases for production applications.
+The library currently provides **~95% of core Supabase functionality** and covers all common use cases for production applications.
+
+## 🎉 What's New in v0.3.0
+
+### 🔗 Advanced Database Operations
+
+v0.3.0 brings powerful database enhancements that make complex queries simple:
+
+```rust
+// ✨ Logical operators for complex filtering
+let active_adults = client.database()
+    .from("users")
+    .select("*")
+    .and(|q| {
+        q.gte("age", "18")
+         .eq("status", "active")
+         .not(|inner| inner.eq("banned", "true"))
+    })
+    .execute()
+    .await?;
+
+// 🔗 Query joins with related data
+let posts_with_authors = client.database()
+    .from("posts")
+    .select("title,content")
+    .inner_join_as("authors", "name,email", "author")
+    .left_join("categories", "name")
+    .execute()
+    .await?;
+
+// 📦 Bulk operations for efficiency
+let users = client.database()
+    .bulk_upsert("users", vec![
+        json!({"id": 1, "name": "Alice", "email": "alice@example.com"}),
+        json!({"id": 2, "name": "Bob", "email": "bob@example.com"}),
+    ])
+    .await?;
+
+// ⚡ Database transactions
+let result = client.database()
+    .begin_transaction()
+    .insert("users", json!({"name": "Charlie"}))
+    .update("profiles", json!({"bio": "Updated"}), "user_id = 1")
+    .delete("temp_data", "expired = true")
+    .commit()
+    .await?;
+```
 
 ## 📚 Examples
 

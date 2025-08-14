@@ -1,6 +1,6 @@
 [package]
 name = "supabase-lib-rs"
-version = "0.2.0"
+version = "0.3.0"
 description = "A comprehensive, production-ready Rust client library for Supabase with full cross-platform support (native + WASM)"
 authors = ["Nizovtsev Nikolay <nizovtsevnv@users.noreply.github.com>"]
 license = "MIT"
@@ -20,11 +20,9 @@ exclude = [
     "docker-compose.yml",
     ".env*",
     "justfile",
-    "flake.*",
-    "deny.toml",
-    "CLAUDE.md",
-    "CONTRIBUTING.md",
-    "TESTING.md"
+    "flake.nix",
+    "flake.lock",
+    "deny.toml"
 ]
 
 [badges]
@@ -32,8 +30,11 @@ docsrs = { repository = "https://docs.rs/supabase-lib-rs" }
 
 [lib]
 name = "supabase"
-path = "src/lib.rs"
-crate-type = ["rlib", "staticlib"]
+# Поддержка разных типов библиотек:
+# - lib: обычная Rust библиотека (crates.io)
+# - staticlib: статическая C-совместимая библиотека (.a/.lib)
+# - cdylib: динамическая C-совместимая библиотека (.so/.dylib/.dll)
+crate-type = ["lib", "staticlib", "cdylib"]
 
 [package.metadata.docs.rs]
 # Enable all features to build comprehensive docs
@@ -142,6 +143,8 @@ wasm = [
 
 # All features for testing
 all = ["auth", "database", "storage", "functions", "realtime", "native", "wasm"]
+# Новый feature для C FFI
+ffi = ["auth", "database", "storage", "functions", "native"]
 
 [[example]]
 name = "basic_usage"

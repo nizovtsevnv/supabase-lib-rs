@@ -403,6 +403,9 @@ pub mod storage;
 #[cfg(feature = "functions")]
 pub mod functions;
 
+#[cfg(feature = "ffi")]
+pub mod ffi;
+
 pub mod types;
 
 // Internal modules

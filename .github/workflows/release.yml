@@ -1,0 +1,209 @@
+name: Release Cross-Platform Libraries
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build"
+        required: true
+        default: "v0.2.0"
+
+jobs:
+  build-libraries:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          # Linux x86_64
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            lib_name: libsupabase.so
+            static_name: libsupabase.a
+
+          # Linux x86_64 (MUSL - статическая линковка)
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            lib_name: libsupabase.so
+            static_name: libsupabase.a
+
+          # Linux ARM64
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            lib_name: libsupabase.so
+            static_name: libsupabase.a
+
+          # macOS x86_64
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            lib_name: libsupabase.dylib
+            static_name: libsupabase.a
+
+          # macOS ARM64 (Apple Silicon)
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            lib_name: libsupabase.dylib
+            static_name: libsupabase.a
+
+          # Windows x86_64
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            lib_name: supabase.dll
+            static_name: supabase.lib
+
+          # Windows ARM64
+          - target: aarch64-pc-windows-msvc
+            os: windows-latest
+            lib_name: supabase.dll
+            static_name: supabase.lib
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ matrix.target }}
+          cache-on-failure: true
+
+      # Linux-specific setup
+      - name: Install Linux cross-compilation tools
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          if [[ "${{ matrix.target }}" == *"musl"* ]]; then
+            sudo apt-get install -y musl-tools
+          fi
+          if [[ "${{ matrix.target }}" == "aarch64"* ]]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu
+          fi
+
+      # Windows-specific setup
+      - name: Set up MSVC (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure cross-compilation environment
+        run: |
+          if [[ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]]; then
+            echo "CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+            echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+          fi
+        shell: bash
+
+      - name: Build static library
+        run: |
+          cargo build --release --lib --target ${{ matrix.target }} --features "auth database storage functions native"
+        env:
+          CARGO_TARGET_DIR: target
+
+      - name: Build dynamic library (cdylib)
+        run: |
+          # Временно изменяем crate-type для создания динамической библиотеки
+          sed -i.bak 's/crate-type = \["lib"\]/crate-type = ["cdylib", "lib"]/g' Cargo.toml || true
+          cargo build --release --lib --target ${{ matrix.target }} --features "auth database storage functions native"
+          mv Cargo.toml.bak Cargo.toml || true
+        shell: bash
+
+      - name: Prepare artifacts (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          mkdir -p artifacts/${{ matrix.target }}
+
+          # Статическая библиотека
+          cp target/${{ matrix.target }}/release/${{ matrix.static_name }} artifacts/${{ matrix.target }}/
+
+          # Динамическая библиотека
+          if [ -f target/${{ matrix.target }}/release/${{ matrix.lib_name }} ]; then
+            cp target/${{ matrix.target }}/release/${{ matrix.lib_name }} artifacts/${{ matrix.target }}/
+          fi
+
+          # Создаем архив
+          cd artifacts
+          tar -czf supabase-${{ matrix.target }}.tar.gz ${{ matrix.target }}/
+
+      - name: Prepare artifacts (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          mkdir artifacts/${{ matrix.target }}
+
+          # Статическая библиотека
+          copy target\${{ matrix.target }}\release\${{ matrix.static_name }} artifacts\${{ matrix.target }}\
+
+          # Динамическая библиотека
+          if exist target\${{ matrix.target }}\release\${{ matrix.lib_name }} (
+            copy target\${{ matrix.target }}\release\${{ matrix.lib_name }} artifacts\${{ matrix.target }}\
+          )
+
+          # Создаем архив
+          cd artifacts
+          tar -czf supabase-${{ matrix.target }}.tar.gz ${{ matrix.target }}/
+        shell: cmd
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-${{ matrix.target }}
+          path: artifacts/supabase-${{ matrix.target }}.tar.gz
+
+  # WASM build (отдельно, так как специфичен)
+  build-wasm:
+    name: Build WASM
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build WASM package
+        run: |
+          wasm-pack build --target web --features "auth database storage functions wasm" --out-dir pkg-web
+          wasm-pack build --target nodejs --features "auth database storage functions wasm" --out-dir pkg-node
+
+      - name: Prepare WASM artifacts
+        run: |
+          mkdir -p artifacts/wasm32-unknown-unknown
+          cp -r pkg-web artifacts/wasm32-unknown-unknown/
+          cp -r pkg-node artifacts/wasm32-unknown-unknown/
+          cd artifacts
+          tar -czf supabase-wasm32-unknown-unknown.tar.gz wasm32-unknown-unknown/
+
+      - name: Upload WASM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-wasm32-unknown-unknown
+          path: artifacts/supabase-wasm32-unknown-unknown.tar.gz
+
+  # Создание релиза с артефактами
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build-libraries, build-wasm]
+    if: github.event_name == 'release'
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release-artifacts/**/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
