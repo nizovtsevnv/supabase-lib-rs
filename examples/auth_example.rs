@@ -3,6 +3,7 @@
 use std::env;
 use supabase::prelude::*;
 
+#[allow(clippy::result_large_err)]
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
@@ -190,12 +191,14 @@ async fn main() -> Result<()> {
 
     // Auto refresh test
     println!("\n🔄 Testing auto refresh...");
-    match auth.auto_refresh().await {
-        Ok(_) => {
-            println!("✅ Auto refresh completed (no action needed)");
-        }
-        Err(e) => {
-            println!("❌ Auto refresh failed: {}", e);
+    if auth.needs_refresh() {
+        match auth.refresh_session().await {
+            Ok(_) => {
+                println!("✅ Token refresh successful");
+            }
+            Err(e) => {
+                println!("❌ Token refresh failed: {}", e);
+            }
         }
     }
 

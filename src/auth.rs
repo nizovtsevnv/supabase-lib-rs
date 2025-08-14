@@ -1,4 +1,13 @@
-//! Authentication module for Supabase
+//! Authentication module for Supabase client
+//!
+//! This module provides comprehensive authentication functionality including:
+//! - Email/password authentication
+//! - OAuth providers (Google, GitHub, Discord, Apple, etc.)
+//! - Phone/SMS authentication
+//! - Magic link authentication
+//! - Anonymous authentication
+//! - Session management and token refresh
+//! - Auth state change events
 
 use crate::{
     error::{Error, Result},
@@ -7,16 +16,184 @@ use crate::{
 use chrono::Utc;
 use reqwest::Client as HttpClient;
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, RwLock};
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock, Weak};
 use tracing::{debug, info, warn};
 use uuid::Uuid;
 
-/// Authentication client for handling user sessions and JWT tokens
+/// Authentication state event types
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AuthEvent {
+    /// User signed in
+    SignedIn,
+    /// User signed out
+    SignedOut,
+    /// Session refreshed
+    TokenRefreshed,
+    /// User information updated
+    UserUpdated,
+    /// Password reset initiated
+    PasswordReset,
+}
+
+/// Authentication state change callback
+pub type AuthStateCallback = Box<dyn Fn(AuthEvent, Option<Session>) + Send + Sync + 'static>;
+
+/// Authentication event listener handle
 #[derive(Debug, Clone)]
+pub struct AuthEventHandle {
+    id: Uuid,
+    auth: Weak<Auth>,
+}
+
+impl AuthEventHandle {
+    /// Remove this event listener
+    pub fn remove(&self) {
+        if let Some(auth) = self.auth.upgrade() {
+            auth.remove_auth_listener(self.id);
+        }
+    }
+}
+
+/// Supported OAuth providers
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum OAuthProvider {
+    /// Google OAuth
+    #[serde(rename = "google")]
+    Google,
+    /// GitHub OAuth
+    #[serde(rename = "github")]
+    GitHub,
+    /// Discord OAuth
+    #[serde(rename = "discord")]
+    Discord,
+    /// Apple OAuth
+    #[serde(rename = "apple")]
+    Apple,
+    /// Twitter OAuth
+    #[serde(rename = "twitter")]
+    Twitter,
+    /// Facebook OAuth
+    #[serde(rename = "facebook")]
+    Facebook,
+    /// Microsoft OAuth
+    #[serde(rename = "azure")]
+    Microsoft,
+    /// LinkedIn OAuth
+    #[serde(rename = "linkedin_oidc")]
+    LinkedIn,
+}
+
+impl OAuthProvider {
+    /// Get provider name as string
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            OAuthProvider::Google => "google",
+            OAuthProvider::GitHub => "github",
+            OAuthProvider::Discord => "discord",
+            OAuthProvider::Apple => "apple",
+            OAuthProvider::Twitter => "twitter",
+            OAuthProvider::Facebook => "facebook",
+            OAuthProvider::Microsoft => "azure",
+            OAuthProvider::LinkedIn => "linkedin_oidc",
+        }
+    }
+}
+
+/// OAuth sign-in options
+#[derive(Debug, Clone, Default)]
+pub struct OAuthOptions {
+    /// Custom redirect URL after sign-in
+    pub redirect_to: Option<String>,
+    /// Additional scopes to request
+    pub scopes: Option<Vec<String>>,
+    /// Additional provider-specific options
+    pub query_params: Option<std::collections::HashMap<String, String>>,
+}
+
+/// OAuth response with authorization URL
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OAuthResponse {
+    /// Authorization URL to redirect user to
+    pub url: String,
+}
+
+/// Phone authentication request
+#[derive(Debug, Serialize)]
+struct PhoneSignUpRequest {
+    phone: String,
+    password: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    data: Option<serde_json::Value>,
+}
+
+/// Phone authentication sign-in request
+#[derive(Debug, Serialize)]
+struct PhoneSignInRequest {
+    phone: String,
+    password: String,
+}
+
+/// OTP verification request
+#[derive(Debug, Serialize)]
+struct OTPVerificationRequest {
+    phone: String,
+    token: String,
+    #[serde(rename = "type")]
+    verification_type: String,
+}
+
+/// Magic link request
+#[derive(Debug, Serialize)]
+struct MagicLinkRequest {
+    email: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    redirect_to: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    data: Option<serde_json::Value>,
+}
+
+/// Anonymous sign-in request
+#[derive(Debug, Serialize)]
+struct AnonymousSignInRequest {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    data: Option<serde_json::Value>,
+}
+
+/// Authentication client for handling user sessions and JWT tokens
 pub struct Auth {
     http_client: Arc<HttpClient>,
     config: Arc<SupabaseConfig>,
     session: Arc<RwLock<Option<Session>>>,
+    event_listeners: Arc<RwLock<HashMap<Uuid, AuthStateCallback>>>,
+}
+
+impl Clone for Auth {
+    fn clone(&self) -> Self {
+        Self {
+            http_client: self.http_client.clone(),
+            config: self.config.clone(),
+            session: self.session.clone(),
+            event_listeners: Arc::new(RwLock::new(HashMap::new())),
+        }
+    }
+}
+
+impl std::fmt::Debug for Auth {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Auth")
+            .field("http_client", &"HttpClient")
+            .field("config", &self.config)
+            .field("session", &self.session)
+            .field(
+                "event_listeners",
+                &format!(
+                    "HashMap<Uuid, Callback> with {} listeners",
+                    self.event_listeners.read().map(|l| l.len()).unwrap_or(0)
+                ),
+            )
+            .finish()
+    }
 }
 
 /// User information from Supabase Auth
@@ -106,6 +283,7 @@ impl Auth {
             http_client,
             config,
             session: Arc::new(RwLock::new(None)),
+            event_listeners: Arc::new(RwLock::new(HashMap::new())),
         })
     }
 
@@ -156,6 +334,7 @@ impl Auth {
 
         if let Some(ref session) = auth_response.session {
             self.set_session(session.clone()).await?;
+            self.trigger_auth_event(AuthEvent::SignedIn);
             info!("User signed up successfully");
         }
 
@@ -198,6 +377,7 @@ impl Auth {
 
         if let Some(ref session) = auth_response.session {
             self.set_session(session.clone()).await?;
+            self.trigger_auth_event(AuthEvent::SignedIn);
             info!("User signed in successfully");
         }
 
@@ -222,6 +402,7 @@ impl Auth {
         }
 
         self.clear_session().await?;
+        self.trigger_auth_event(AuthEvent::SignedOut);
         info!("User signed out successfully");
 
         Ok(())
@@ -343,6 +524,7 @@ impl Auth {
 
         if let Some(ref session) = auth_response.session {
             self.set_session(session.clone()).await?;
+            self.trigger_auth_event(AuthEvent::TokenRefreshed);
             info!("Session refreshed successfully");
         }
 
@@ -440,27 +622,489 @@ impl Auth {
     pub fn needs_refresh(&self) -> bool {
         let session_guard = match self.session.read() {
             Ok(guard) => guard,
-            Err(_) => return false,
+            Err(_) => {
+                warn!("Failed to read session lock");
+                return false;
+            }
         };
 
         match session_guard.as_ref() {
             Some(session) => {
                 let now = Utc::now();
-                let threshold =
-                    chrono::Duration::seconds(self.config.auth_config.refresh_threshold as i64);
-                session.expires_at - now < threshold
+                let buffer = chrono::Duration::minutes(5); // Refresh 5 minutes before expiry
+                session.expires_at < (now + buffer)
             }
             None => false,
         }
     }
 
-    /// Auto-refresh token if needed
-    pub async fn auto_refresh(&self) -> Result<()> {
-        if !self.config.auth_config.auto_refresh_token || !self.needs_refresh() {
-            return Ok(());
+    /// Sign in with OAuth provider
+    ///
+    /// Returns a URL that the user should be redirected to for authentication.
+    /// After successful authentication, the user will be redirected back with the session.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use supabase::auth::{OAuthProvider, OAuthOptions};
+    ///
+    /// # async fn example() -> supabase::Result<()> {
+    /// let client = supabase::Client::new("url", "key")?;
+    ///
+    /// let options = OAuthOptions {
+    ///     redirect_to: Some("https://myapp.com/callback".to_string()),
+    ///     scopes: Some(vec!["email".to_string(), "profile".to_string()]),
+    ///     ..Default::default()
+    /// };
+    ///
+    /// let response = client.auth().sign_in_with_oauth(OAuthProvider::Google, Some(options)).await?;
+    /// println!("Redirect to: {}", response.url);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn sign_in_with_oauth(
+        &self,
+        provider: OAuthProvider,
+        options: Option<OAuthOptions>,
+    ) -> Result<OAuthResponse> {
+        debug!("Initiating OAuth sign-in with provider: {:?}", provider);
+
+        let mut url = format!(
+            "{}/auth/v1/authorize?provider={}",
+            self.config.url,
+            provider.as_str()
+        );
+
+        if let Some(opts) = options {
+            if let Some(redirect_to) = opts.redirect_to {
+                url.push_str(&format!(
+                    "&redirect_to={}",
+                    urlencoding::encode(&redirect_to)
+                ));
+            }
+
+            if let Some(scopes) = opts.scopes {
+                let scope_str = scopes.join(" ");
+                url.push_str(&format!("&scope={}", urlencoding::encode(&scope_str)));
+            }
+
+            if let Some(query_params) = opts.query_params {
+                for (key, value) in query_params {
+                    url.push_str(&format!(
+                        "&{}={}",
+                        urlencoding::encode(&key),
+                        urlencoding::encode(&value)
+                    ));
+                }
+            }
         }
 
-        debug!("Auto-refreshing token");
-        self.refresh_session().await.map(|_| ())
+        Ok(OAuthResponse { url })
+    }
+
+    /// Sign up with phone number
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # async fn example() -> supabase::Result<()> {
+    /// let client = supabase::Client::new("url", "key")?;
+    ///
+    /// let response = client.auth()
+    ///     .sign_up_with_phone("+1234567890", "securepassword", None)
+    ///     .await?;
+    ///
+    /// if let Some(user) = response.user {
+    ///     println!("User created: {:?}", user.phone);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn sign_up_with_phone(
+        &self,
+        phone: &str,
+        password: &str,
+        data: Option<serde_json::Value>,
+    ) -> Result<AuthResponse> {
+        debug!("Signing up user with phone: {}", phone);
+
+        let payload = PhoneSignUpRequest {
+            phone: phone.to_string(),
+            password: password.to_string(),
+            data,
+        };
+
+        let response = self
+            .http_client
+            .post(format!("{}/auth/v1/signup", self.config.url))
+            .json(&payload)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_msg = match response.text().await {
+                Ok(text) => text,
+                Err(_) => format!("Phone sign up failed with status: {}", status),
+            };
+            return Err(Error::auth(error_msg));
+        }
+
+        let auth_response: AuthResponse = response.json().await?;
+
+        if let Some(ref session) = auth_response.session {
+            self.set_session(session.clone()).await?;
+            self.trigger_auth_event(AuthEvent::SignedIn);
+            info!("User signed up with phone successfully");
+        }
+
+        Ok(auth_response)
+    }
+
+    /// Sign in with phone number
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # async fn example() -> supabase::Result<()> {
+    /// let client = supabase::Client::new("url", "key")?;
+    ///
+    /// let response = client.auth()
+    ///     .sign_in_with_phone("+1234567890", "securepassword")
+    ///     .await?;
+    ///
+    /// if let Some(user) = response.user {
+    ///     println!("User signed in: {:?}", user.phone);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn sign_in_with_phone(&self, phone: &str, password: &str) -> Result<AuthResponse> {
+        debug!("Signing in user with phone: {}", phone);
+
+        let payload = PhoneSignInRequest {
+            phone: phone.to_string(),
+            password: password.to_string(),
+        };
+
+        let response = self
+            .http_client
+            .post(format!(
+                "{}/auth/v1/token?grant_type=password",
+                self.config.url
+            ))
+            .json(&payload)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_msg = match response.text().await {
+                Ok(text) => text,
+                Err(_) => format!("Phone sign in failed with status: {}", status),
+            };
+            return Err(Error::auth(error_msg));
+        }
+
+        let auth_response: AuthResponse = response.json().await?;
+
+        if let Some(ref session) = auth_response.session {
+            self.set_session(session.clone()).await?;
+            self.trigger_auth_event(AuthEvent::SignedIn);
+            info!("User signed in with phone successfully");
+        }
+
+        Ok(auth_response)
+    }
+
+    /// Verify OTP token
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # async fn example() -> supabase::Result<()> {
+    /// let client = supabase::Client::new("url", "key")?;
+    ///
+    /// let response = client.auth()
+    ///     .verify_otp("+1234567890", "123456", "sms")
+    ///     .await?;
+    ///
+    /// if let Some(session) = response.session {
+    ///     println!("OTP verified, user signed in");
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn verify_otp(
+        &self,
+        phone: &str,
+        token: &str,
+        verification_type: &str,
+    ) -> Result<AuthResponse> {
+        debug!("Verifying OTP for phone: {}", phone);
+
+        let payload = OTPVerificationRequest {
+            phone: phone.to_string(),
+            token: token.to_string(),
+            verification_type: verification_type.to_string(),
+        };
+
+        let response = self
+            .http_client
+            .post(format!("{}/auth/v1/verify", self.config.url))
+            .json(&payload)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_msg = match response.text().await {
+                Ok(text) => text,
+                Err(_) => format!("OTP verification failed with status: {}", status),
+            };
+            return Err(Error::auth(error_msg));
+        }
+
+        let auth_response: AuthResponse = response.json().await?;
+
+        if let Some(ref session) = auth_response.session {
+            self.set_session(session.clone()).await?;
+            self.trigger_auth_event(AuthEvent::SignedIn);
+            info!("OTP verified successfully");
+        }
+
+        Ok(auth_response)
+    }
+
+    /// Send magic link for passwordless authentication
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # async fn example() -> supabase::Result<()> {
+    /// let client = supabase::Client::new("url", "key")?;
+    ///
+    /// client.auth()
+    ///     .sign_in_with_magic_link("user@example.com", Some("https://myapp.com/callback".to_string()), None)
+    ///     .await?;
+    ///
+    /// println!("Magic link sent to email");
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn sign_in_with_magic_link(
+        &self,
+        email: &str,
+        redirect_to: Option<String>,
+        data: Option<serde_json::Value>,
+    ) -> Result<()> {
+        debug!("Sending magic link to email: {}", email);
+
+        let payload = MagicLinkRequest {
+            email: email.to_string(),
+            redirect_to,
+            data,
+        };
+
+        let response = self
+            .http_client
+            .post(format!("{}/auth/v1/magiclink", self.config.url))
+            .json(&payload)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_msg = match response.text().await {
+                Ok(text) => text,
+                Err(_) => format!("Magic link request failed with status: {}", status),
+            };
+            return Err(Error::auth(error_msg));
+        }
+
+        info!("Magic link sent successfully");
+        Ok(())
+    }
+
+    /// Sign in anonymously
+    ///
+    /// Creates a temporary anonymous user session that can be converted to a permanent account later.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # async fn example() -> supabase::Result<()> {
+    /// let client = supabase::Client::new("url", "key")?;
+    ///
+    /// let response = client.auth()
+    ///     .sign_in_anonymously(None)
+    ///     .await?;
+    ///
+    /// if let Some(user) = response.user {
+    ///     println!("Anonymous user created: {}", user.id);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn sign_in_anonymously(
+        &self,
+        data: Option<serde_json::Value>,
+    ) -> Result<AuthResponse> {
+        debug!("Creating anonymous user session");
+
+        let payload = AnonymousSignInRequest { data };
+
+        let response = self
+            .http_client
+            .post(format!("{}/auth/v1/signup", self.config.url))
+            .header("Authorization", format!("Bearer {}", self.config.key))
+            .json(&payload)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_msg = match response.text().await {
+                Ok(text) => text,
+                Err(_) => format!("Anonymous sign in failed with status: {}", status),
+            };
+            return Err(Error::auth(error_msg));
+        }
+
+        let auth_response: AuthResponse = response.json().await?;
+
+        if let Some(ref session) = auth_response.session {
+            self.set_session(session.clone()).await?;
+            self.trigger_auth_event(AuthEvent::SignedIn);
+            info!("Anonymous user session created successfully");
+        }
+
+        Ok(auth_response)
+    }
+
+    /// Enhanced password recovery with custom redirect and options
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # async fn example() -> supabase::Result<()> {
+    /// let client = supabase::Client::new("url", "key")?;
+    ///
+    /// client.auth()
+    ///     .reset_password_for_email_enhanced("user@example.com", Some("https://myapp.com/reset".to_string()))
+    ///     .await?;
+    ///
+    /// println!("Password reset email sent");
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn reset_password_for_email_enhanced(
+        &self,
+        email: &str,
+        redirect_to: Option<String>,
+    ) -> Result<()> {
+        debug!("Initiating enhanced password recovery for email: {}", email);
+
+        let payload = PasswordResetRequest {
+            email: email.to_string(),
+            redirect_to,
+        };
+
+        let response = self
+            .http_client
+            .post(format!("{}/auth/v1/recover", self.config.url))
+            .json(&payload)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_msg = match response.text().await {
+                Ok(text) => text,
+                Err(_) => format!("Enhanced password recovery failed with status: {}", status),
+            };
+            return Err(Error::auth(error_msg));
+        }
+
+        self.trigger_auth_event(AuthEvent::PasswordReset);
+        info!("Enhanced password recovery email sent successfully");
+        Ok(())
+    }
+
+    /// Subscribe to authentication state changes
+    ///
+    /// Returns a handle that can be used to remove the listener later.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use supabase::auth::AuthEvent;
+    ///
+    /// # async fn example() -> supabase::Result<()> {
+    /// let client = supabase::Client::new("url", "key")?;
+    ///
+    /// let handle = client.auth().on_auth_state_change(|event, session| {
+    ///     match event {
+    ///         AuthEvent::SignedIn => {
+    ///             if let Some(session) = session {
+    ///                 println!("User signed in: {}", session.user.email.unwrap_or_default());
+    ///             }
+    ///         }
+    ///         AuthEvent::SignedOut => println!("User signed out"),
+    ///         AuthEvent::TokenRefreshed => println!("Token refreshed"),
+    ///         _ => {}
+    ///     }
+    /// });
+    ///
+    /// // Later remove the listener
+    /// handle.remove();
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn on_auth_state_change<F>(&self, callback: F) -> AuthEventHandle
+    where
+        F: Fn(AuthEvent, Option<Session>) + Send + Sync + 'static,
+    {
+        let id = Uuid::new_v4();
+        let callback = Box::new(callback);
+
+        if let Ok(mut listeners) = self.event_listeners.write() {
+            listeners.insert(id, callback);
+        }
+
+        AuthEventHandle {
+            id,
+            auth: Arc::downgrade(&Arc::new(self.clone())),
+        }
+    }
+
+    /// Remove an authentication state listener
+    pub fn remove_auth_listener(&self, id: Uuid) {
+        if let Ok(mut listeners) = self.event_listeners.write() {
+            listeners.remove(&id);
+        }
+    }
+
+    /// Trigger authentication state change event
+    fn trigger_auth_event(&self, event: AuthEvent) {
+        let session = match self.session.read() {
+            Ok(guard) => guard.clone(),
+            Err(_) => {
+                warn!("Failed to read session for event trigger");
+                return;
+            }
+        };
+
+        let listeners = match self.event_listeners.read() {
+            Ok(guard) => guard,
+            Err(_) => {
+                warn!("Failed to read event listeners");
+                return;
+            }
+        };
+
+        for callback in listeners.values() {
+            callback(event.clone(), session.clone());
+        }
     }
 }

@@ -9,8 +9,8 @@ use crate::{
     types::SupabaseConfig,
 };
 use reqwest::Client as HttpClient;
-use serde_json::Value as JsonValue;
-use std::sync::Arc;
+use serde_json::Value;
+use std::{collections::HashMap, sync::Arc};
 use tracing::{debug, info};
 
 /// Edge Functions client for invoking serverless functions
@@ -96,7 +96,7 @@ impl Functions {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn invoke(&self, function_name: &str, body: Option<JsonValue>) -> Result<JsonValue> {
+    pub async fn invoke(&self, function_name: &str, body: Option<Value>) -> Result<Value> {
         self.invoke_with_options(function_name, body, None).await
     }
 
@@ -130,9 +130,9 @@ impl Functions {
     pub async fn invoke_with_options(
         &self,
         function_name: &str,
-        body: Option<JsonValue>,
-        headers: Option<std::collections::HashMap<String, String>>,
-    ) -> Result<JsonValue> {
+        body: Option<Value>,
+        headers: Option<HashMap<String, String>>,
+    ) -> Result<Value> {
         debug!("Invoking Edge Function: {}", function_name);
 
         let url = format!("{}/functions/v1/{}", self.config.url, function_name);
@@ -162,7 +162,7 @@ impl Functions {
             let error_msg = match response.text().await {
                 Ok(text) => {
                     // Try to parse error message from Supabase
-                    if let Ok(error_json) = serde_json::from_str::<JsonValue>(&text) {
+                    if let Ok(error_json) = serde_json::from_str::<Value>(&text) {
                         if let Some(message) = error_json.get("message") {
                             message.as_str().unwrap_or(&text).to_string()
                         } else {
@@ -177,7 +177,7 @@ impl Functions {
             return Err(Error::functions(error_msg));
         }
 
-        let result: JsonValue = response.json().await?;
+        let result: Value = response.json().await?;
         info!("Edge Function {} invoked successfully", function_name);
 
         Ok(result)

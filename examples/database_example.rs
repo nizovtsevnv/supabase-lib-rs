@@ -32,6 +32,7 @@ struct UpdatePost {
     updated_at: chrono::DateTime<chrono::Utc>,
 }
 
+#[allow(clippy::result_large_err)]
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();

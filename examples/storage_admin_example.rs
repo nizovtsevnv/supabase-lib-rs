@@ -3,6 +3,7 @@
 use std::env;
 use supabase::prelude::*;
 
+#[allow(clippy::result_large_err)]
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();

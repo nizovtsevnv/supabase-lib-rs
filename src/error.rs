@@ -1,16 +1,97 @@
 //! Error handling for the Supabase client
 
+use std::collections::HashMap;
 use thiserror::Error;
 
 /// Result type alias for Supabase operations
+#[allow(clippy::result_large_err)]
 pub type Result<T> = std::result::Result<T, Error>;
+
+/// Platform-specific error context
+#[derive(Debug, Clone)]
+pub enum PlatformContext {
+    /// Native platform (tokio runtime)
+    Native {
+        /// Operating system information
+        os_info: Option<String>,
+        /// Available system resources
+        system_resources: Option<String>,
+    },
+    /// WebAssembly platform
+    Wasm {
+        /// Browser information
+        user_agent: Option<String>,
+        /// Available Web APIs
+        available_apis: Vec<String>,
+        /// CORS status
+        cors_enabled: bool,
+    },
+}
+
+/// HTTP error details
+#[derive(Debug, Clone)]
+pub struct HttpErrorContext {
+    /// HTTP status code
+    pub status_code: Option<u16>,
+    /// Response headers
+    pub headers: Option<HashMap<String, String>>,
+    /// Response body (if available)
+    pub response_body: Option<String>,
+    /// Request URL
+    pub url: Option<String>,
+    /// Request method
+    pub method: Option<String>,
+}
+
+/// Retry information for failed requests
+#[derive(Debug, Clone)]
+pub struct RetryInfo {
+    /// Number of attempts made
+    pub attempts: u32,
+    /// Whether the error is retryable
+    pub retryable: bool,
+    /// Suggested retry delay in seconds
+    pub retry_after: Option<u64>,
+}
+
+/// Enhanced error context
+#[derive(Debug, Clone)]
+pub struct ErrorContext {
+    /// Platform-specific context
+    pub platform: Option<PlatformContext>,
+    /// HTTP error details
+    pub http: Option<HttpErrorContext>,
+    /// Retry information
+    pub retry: Option<RetryInfo>,
+    /// Additional metadata
+    pub metadata: HashMap<String, String>,
+    /// Error timestamp
+    pub timestamp: chrono::DateTime<chrono::Utc>,
+}
+
+impl Default for ErrorContext {
+    fn default() -> Self {
+        Self {
+            platform: None,
+            http: None,
+            retry: None,
+            metadata: HashMap::new(),
+            timestamp: chrono::Utc::now(),
+        }
+    }
+}
 
 /// Main error type for Supabase operations
 #[derive(Error, Debug)]
 pub enum Error {
-    /// HTTP request errors
-    #[error("HTTP request failed: {0}")]
-    Http(#[from] reqwest::Error),
+    /// HTTP request errors with enhanced context
+    #[error("HTTP request failed: {message}")]
+    Http {
+        message: String,
+        #[source]
+        source: Option<reqwest::Error>,
+        context: ErrorContext,
+    },
 
     /// JSON serialization/deserialization errors
     #[error("JSON error: {0}")]
@@ -25,21 +106,33 @@ pub enum Error {
     #[error("JWT error: {0}")]
     Jwt(#[from] jsonwebtoken::errors::Error),
 
-    /// Authentication errors
+    /// Authentication errors with enhanced context
     #[error("Authentication error: {message}")]
-    Auth { message: String },
+    Auth {
+        message: String,
+        context: ErrorContext,
+    },
 
-    /// Database operation errors
+    /// Database operation errors with enhanced context
     #[error("Database error: {message}")]
-    Database { message: String },
+    Database {
+        message: String,
+        context: ErrorContext,
+    },
 
-    /// Storage operation errors
+    /// Storage operation errors with enhanced context
     #[error("Storage error: {message}")]
-    Storage { message: String },
+    Storage {
+        message: String,
+        context: ErrorContext,
+    },
 
-    /// Realtime connection errors
+    /// Realtime connection errors with enhanced context
     #[error("Realtime error: {message}")]
-    Realtime { message: String },
+    Realtime {
+        message: String,
+        context: ErrorContext,
+    },
 
     /// Configuration errors
     #[error("Configuration error: {message}")]
@@ -49,57 +142,165 @@ pub enum Error {
     #[error("Invalid input: {message}")]
     InvalidInput { message: String },
 
-    /// Network errors
+    /// Network errors with enhanced context
     #[error("Network error: {message}")]
-    Network { message: String },
+    Network {
+        message: String,
+        context: ErrorContext,
+    },
 
-    /// Rate limiting errors
+    /// Rate limiting errors with retry information
     #[error("Rate limit exceeded: {message}")]
-    RateLimit { message: String },
+    RateLimit {
+        message: String,
+        context: ErrorContext,
+    },
 
-    /// Permission denied errors
+    /// Permission denied errors with enhanced context
     #[error("Permission denied: {message}")]
-    PermissionDenied { message: String },
+    PermissionDenied {
+        message: String,
+        context: ErrorContext,
+    },
 
-    /// Resource not found errors
+    /// Resource not found errors with enhanced context
     #[error("Not found: {message}")]
-    NotFound { message: String },
+    NotFound {
+        message: String,
+        context: ErrorContext,
+    },
 
     /// Generic errors
     #[error("{message}")]
     Generic { message: String },
 
-    /// Functions errors
+    /// Functions errors with enhanced context
     #[error("Functions error: {message}")]
-    Functions { message: String },
+    Functions {
+        message: String,
+        context: ErrorContext,
+    },
 }
 
 impl Error {
-    /// Create an authentication error
+    /// Create an authentication error with enhanced context
     pub fn auth<S: Into<String>>(message: S) -> Self {
         Self::Auth {
             message: message.into(),
+            context: ErrorContext::default(),
         }
     }
 
-    /// Create a database error
+    /// Create an authentication error with custom context
+    pub fn auth_with_context<S: Into<String>>(message: S, context: ErrorContext) -> Self {
+        Self::Auth {
+            message: message.into(),
+            context,
+        }
+    }
+
+    /// Create a database error with enhanced context
     pub fn database<S: Into<String>>(message: S) -> Self {
         Self::Database {
             message: message.into(),
+            context: ErrorContext::default(),
         }
     }
 
-    /// Create a storage error
+    /// Create a database error with custom context
+    pub fn database_with_context<S: Into<String>>(message: S, context: ErrorContext) -> Self {
+        Self::Database {
+            message: message.into(),
+            context,
+        }
+    }
+
+    /// Create a storage error with enhanced context
     pub fn storage<S: Into<String>>(message: S) -> Self {
         Self::Storage {
             message: message.into(),
+            context: ErrorContext::default(),
         }
     }
 
-    /// Create a realtime error
+    /// Create a storage error with custom context
+    pub fn storage_with_context<S: Into<String>>(message: S, context: ErrorContext) -> Self {
+        Self::Storage {
+            message: message.into(),
+            context,
+        }
+    }
+
+    /// Create a realtime error with enhanced context
     pub fn realtime<S: Into<String>>(message: S) -> Self {
         Self::Realtime {
             message: message.into(),
+            context: ErrorContext::default(),
+        }
+    }
+
+    /// Create a realtime error with custom context
+    pub fn realtime_with_context<S: Into<String>>(message: S, context: ErrorContext) -> Self {
+        Self::Realtime {
+            message: message.into(),
+            context,
+        }
+    }
+
+    /// Create a functions error with enhanced context
+    pub fn functions<S: Into<String>>(message: S) -> Self {
+        Self::Functions {
+            message: message.into(),
+            context: ErrorContext::default(),
+        }
+    }
+
+    /// Create a functions error with custom context
+    pub fn functions_with_context<S: Into<String>>(message: S, context: ErrorContext) -> Self {
+        Self::Functions {
+            message: message.into(),
+            context,
+        }
+    }
+
+    /// Create a network error with enhanced context
+    pub fn network<S: Into<String>>(message: S) -> Self {
+        Self::Network {
+            message: message.into(),
+            context: ErrorContext::default(),
+        }
+    }
+
+    /// Create a rate limit error with retry information
+    pub fn rate_limit<S: Into<String>>(message: S, retry_after: Option<u64>) -> Self {
+        let context = ErrorContext {
+            retry: Some(RetryInfo {
+                attempts: 0,
+                retryable: true,
+                retry_after,
+            }),
+            ..Default::default()
+        };
+
+        Self::RateLimit {
+            message: message.into(),
+            context,
+        }
+    }
+
+    /// Create a permission denied error with enhanced context
+    pub fn permission_denied<S: Into<String>>(message: S) -> Self {
+        Self::PermissionDenied {
+            message: message.into(),
+            context: ErrorContext::default(),
+        }
+    }
+
+    /// Create a not found error with enhanced context
+    pub fn not_found<S: Into<String>>(message: S) -> Self {
+        Self::NotFound {
+            message: message.into(),
+            context: ErrorContext::default(),
         }
     }
 
@@ -117,34 +318,6 @@ impl Error {
         }
     }
 
-    /// Create a network error
-    pub fn network<S: Into<String>>(message: S) -> Self {
-        Self::Network {
-            message: message.into(),
-        }
-    }
-
-    /// Create a rate limit error
-    pub fn rate_limit<S: Into<String>>(message: S) -> Self {
-        Self::RateLimit {
-            message: message.into(),
-        }
-    }
-
-    /// Create a permission denied error
-    pub fn permission_denied<S: Into<String>>(message: S) -> Self {
-        Self::PermissionDenied {
-            message: message.into(),
-        }
-    }
-
-    /// Create a not found error
-    pub fn not_found<S: Into<String>>(message: S) -> Self {
-        Self::NotFound {
-            message: message.into(),
-        }
-    }
-
     /// Create a generic error
     pub fn generic<S: Into<String>>(message: S) -> Self {
         Self::Generic {
@@ -152,27 +325,130 @@ impl Error {
         }
     }
 
-    /// Create a functions error
-    pub fn functions<T: Into<String>>(message: T) -> Self {
-        Self::Functions {
-            message: message.into(),
+    /// Get error context if available
+    pub fn context(&self) -> Option<&ErrorContext> {
+        match self {
+            Error::Http { context, .. } => Some(context),
+            Error::Auth { context, .. } => Some(context),
+            Error::Database { context, .. } => Some(context),
+            Error::Storage { context, .. } => Some(context),
+            Error::Realtime { context, .. } => Some(context),
+            Error::Network { context, .. } => Some(context),
+            Error::RateLimit { context, .. } => Some(context),
+            Error::PermissionDenied { context, .. } => Some(context),
+            Error::NotFound { context, .. } => Some(context),
+            Error::Functions { context, .. } => Some(context),
+            _ => None,
+        }
+    }
+
+    /// Check if error is retryable
+    pub fn is_retryable(&self) -> bool {
+        self.context()
+            .and_then(|ctx| ctx.retry.as_ref())
+            .map(|retry| retry.retryable)
+            .unwrap_or(false)
+    }
+
+    /// Get retry delay in seconds
+    pub fn retry_after(&self) -> Option<u64> {
+        self.context()
+            .and_then(|ctx| ctx.retry.as_ref())
+            .and_then(|retry| retry.retry_after)
+    }
+
+    /// Get HTTP status code if available
+    pub fn status_code(&self) -> Option<u16> {
+        self.context()
+            .and_then(|ctx| ctx.http.as_ref())
+            .and_then(|http| http.status_code)
+    }
+}
+
+/// Detect current platform context
+fn detect_platform_context() -> PlatformContext {
+    #[cfg(target_arch = "wasm32")]
+    {
+        PlatformContext::Wasm {
+            user_agent: web_sys::window().and_then(|window| window.navigator().user_agent().ok()),
+            available_apis: detect_available_web_apis(),
+            cors_enabled: true, // Assume CORS is enabled for simplicity
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        PlatformContext::Native {
+            os_info: Some(format!(
+                "{} {}",
+                std::env::consts::OS,
+                std::env::consts::ARCH
+            )),
+            system_resources: None, // Could be enhanced with system info
         }
     }
 }
 
-/// Handle HTTP status codes and convert to appropriate errors
-impl From<reqwest::StatusCode> for Error {
-    fn from(status: reqwest::StatusCode) -> Self {
-        match status {
-            reqwest::StatusCode::UNAUTHORIZED => Self::auth("Unauthorized"),
-            reqwest::StatusCode::FORBIDDEN => Self::permission_denied("Forbidden"),
-            reqwest::StatusCode::NOT_FOUND => Self::not_found("Resource not found"),
-            reqwest::StatusCode::TOO_MANY_REQUESTS => Self::rate_limit("Too many requests"),
-            reqwest::StatusCode::INTERNAL_SERVER_ERROR => Self::network("Internal server error"),
-            reqwest::StatusCode::BAD_GATEWAY => Self::network("Bad gateway"),
-            reqwest::StatusCode::SERVICE_UNAVAILABLE => Self::network("Service unavailable"),
-            reqwest::StatusCode::GATEWAY_TIMEOUT => Self::network("Gateway timeout"),
-            _ => Self::network(format!("HTTP error: {}", status)),
+/// Detect available Web APIs in WASM environment
+#[cfg(target_arch = "wasm32")]
+#[allow(dead_code)]
+fn detect_available_web_apis() -> Vec<String> {
+    let mut apis = Vec::new();
+
+    if let Some(window) = web_sys::window() {
+        // Check for common Web APIs
+        if window.local_storage().is_ok() {
+            apis.push("localStorage".to_string());
+        }
+        if window.session_storage().is_ok() {
+            apis.push("sessionStorage".to_string());
+        }
+        apis.push("fetch".to_string()); // Fetch API is generally available
+    }
+
+    apis
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[allow(dead_code)]
+fn detect_available_web_apis() -> Vec<String> {
+    Vec::new()
+}
+
+impl From<reqwest::Error> for Error {
+    fn from(err: reqwest::Error) -> Self {
+        let mut context = ErrorContext::default();
+
+        // Add HTTP context if available
+        if let Some(status) = err.status() {
+            context.http = Some(HttpErrorContext {
+                status_code: Some(status.as_u16()),
+                headers: None,
+                response_body: None,
+                url: err.url().map(|u| u.to_string()),
+                method: None,
+            });
+
+            // Determine if error is retryable
+            let retryable = match status.as_u16() {
+                500..=599 | 429 | 408 => true, // Server errors, rate limit, timeout
+                _ => false,
+            };
+
+            context.retry = Some(RetryInfo {
+                attempts: 0,
+                retryable,
+                retry_after: None,
+            });
+        }
+
+        // Add platform context
+        context.platform = Some(detect_platform_context());
+
+        Error::Http {
+            message: err.to_string(),
+            source: Some(err),
+            context,
         }
     }
 }
@@ -194,8 +470,11 @@ mod tests {
     }
 
     #[test]
-    fn test_from_status_code() {
-        let error = Error::from(reqwest::StatusCode::NOT_FOUND);
-        assert_eq!(error.to_string(), "Not found: Resource not found");
+    fn test_error_context() {
+        let error = Error::auth("test message");
+        assert!(error.context().is_some());
+        if let Some(context) = error.context() {
+            assert!(context.timestamp <= chrono::Utc::now());
+        }
     }
 }

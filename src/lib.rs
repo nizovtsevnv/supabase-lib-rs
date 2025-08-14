@@ -1,388 +1,327 @@
-//! # Supabase Rust Client
+#![allow(clippy::result_large_err)]
+
+//! # Supabase Rust Client Library
 //!
-//! A comprehensive Rust client library for [Supabase](https://supabase.com) that provides
-//! full-featured access to all Supabase services with excellent cross-platform support.
+//! A comprehensive, production-ready Rust client library for Supabase with full cross-platform support (native + WASM).
 //!
-//! ## Features
+//! ## 🚀 Version 0.3.1 - Enhanced Authentication
 //!
-//! - **🔐 Authentication**: Sign up, sign in, JWT handling, session management
-//! - **🗄️ Database**: Full REST API access with query builder, CRUD operations, RPC
-//! - **📁 Storage**: File upload, download, management with bucket operations
-//! - **⚡ Realtime**: WebSocket subscriptions for live database changes
-//! - **🌍 Cross-platform**: Works on native (tokio) and WASM (browser) targets
-//! - **🛡️ Type-safe**: Full type safety with serde integration
-//! - **⚙️ Configurable**: Feature flags for minimal builds
+//! This release introduces a comprehensive authentication system with OAuth providers,
+//! phone authentication, magic links, anonymous sign-in, and real-time auth state events,
+//! plus advanced cross-platform error handling with detailed context and retry logic.
 //!
-//! ## Quick Start
+//! ## ✨ Features
 //!
-//! Add to your `Cargo.toml`:
+//! - **🔐 Authentication**: Complete auth system with OAuth, phone, magic links, anonymous sign-in
+//! - **🗄️ Database**: Advanced PostgreSQL operations with joins, transactions, logical operators
+//! - **📁 Storage**: File upload, download, and management
+//! - **⚡ Realtime**: WebSocket subscriptions for live data
+//! - **🔧 Functions**: Edge Functions invocation
+//! - **🌐 Cross-Platform**: Native (Tokio) and WASM support
+//! - **🛡️ Type Safe**: Full type safety with comprehensive error handling
+//! - **📚 Well Documented**: Extensive documentation with examples
 //!
-//! ```toml
-//! [dependencies]
-//! supabase-lib-rs = "0.2.0"
-//! tokio = { version = "1.0", features = ["full"] }
-//! serde = { version = "1.0", features = ["derive"] }
-//! ```
+//! ## 🚀 Quick Start
 //!
-//! ### Basic Usage
-//!
-//! ```rust,no_run
-//! use supabase::Client;
+//! ```rust
+//! use supabase::auth::AuthEvent;
 //! use serde::{Deserialize, Serialize};
 //!
 //! #[derive(Debug, Serialize, Deserialize)]
-//! struct Post {
-//!     id: Option<i32>,
-//!     title: String,
-//!     content: String,
-//!     author_id: i32,
-//!     created_at: Option<String>,
+//! struct User {
+//!     id: i32,
+//!     name: String,
+//!     email: String,
 //! }
 //!
-//! #[tokio::main]
-//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     // Initialize the client
-//!     let client = Client::new("your-project-url", "your-anon-key")?;
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//!     let client = supabase::Client::new("https://example.supabase.co", "valid-key")?;
 //!
-//!     // Authentication
+//!     // Set up authentication event listener
+//!     let _handle = client.auth().on_auth_state_change(|event, session| {
+//!         match event {
+//!             AuthEvent::SignedIn => println!("User signed in!"),
+//!             AuthEvent::SignedOut => println!("User signed out!"),
+//!             AuthEvent::TokenRefreshed => println!("Token refreshed!"),
+//!             _ => {}
+//!         }
+//!     });
+//!
+//!     // Sign up a new user
 //!     let auth_response = client.auth()
-//!         .sign_in_with_email_and_password("user@example.com", "password")
+//!         .sign_up_with_email_and_password("user@example.com", "secure_password")
 //!         .await?;
 //!
-//!     println!("Signed in: {:?}", auth_response.user);
+//!     println!("User created: {:?}", auth_response.user);
 //!
-//!     // Database operations
-//!     let posts: Vec<Post> = client.database()
+//!     // Complex database query with JOIN
+//!     let posts_with_users: Vec<serde_json::Value> = client.database()
 //!         .from("posts")
-//!         .select("*")
-//!         .eq("author_id", "123")
-//!         .order("created_at", supabase::types::OrderDirection::Descending)
-//!         .limit(10)
+//!         .select("title, content, users(name, email)")
+//!         .inner_join("users", "name, email")
+//!         .eq("published", "true")
 //!         .execute()
 //!         .await?;
 //!
-//!     println!("Found {} posts", posts.len());
-//!
-//!     // Insert new post
-//!     let new_post = Post {
-//!         id: None,
-//!         title: "My First Post".to_string(),
-//!         content: "Hello, Supabase!".to_string(),
-//!         author_id: 123,
-//!         created_at: None,
-//!     };
-//!
-//!     let created: Vec<Post> = client.database()
-//!         .insert("posts")
-//!         .values(new_post)?
-//!         .returning("*")
-//!         .execute()
-//!         .await?;
-//!
-//!     println!("Created post: {:?}", created.first());
+//!     println!("Found {} posts with users", posts_with_users.len());
 //!
 //!     Ok(())
 //! }
 //! ```
 //!
-//! ## Feature Flags
+//! ## 🔐 Authentication Examples
 //!
-//! Enable only the features you need to reduce bundle size:
+//! ### OAuth Providers
 //!
-//! ```toml
-//! [dependencies]
-//! supabase-lib-rs = { version = "0.2.0", features = ["auth", "database"] }
-//! ```
+//! ```rust
+//! use supabase::auth::{OAuthProvider, OAuthOptions};
 //!
-//! Available features:
-//! - `auth` - Authentication and user management
-//! - `database` - Database operations and query builder
-//! - `storage` - File storage operations
-//! - `realtime` - WebSocket subscriptions
-//! - `native` - Native tokio runtime (default)
-//! - `wasm` - WebAssembly support for browsers
-//!
-//! ## Platform Support
-//!
-//! ### Native Applications
-//!
-//! For desktop, server, and mobile applications using tokio:
-//!
-//! ```rust,no_run
-//! # #[cfg(feature = "realtime")]
 //! # async fn example() -> supabase::Result<()> {
-//! use supabase::Client;
-//!
-//! let client = Client::new("your-url", "your-key")?;
-//!
-//! // Full feature support including realtime
-//! let realtime = client.realtime();
-//! realtime.connect().await?;
-//!
-//! let subscription = realtime
-//!     .channel("posts")
-//!     .table("posts")
-//!     .subscribe(|msg| println!("Update: {:?}", msg))
-//!     .await?;
-//!
-//! # Ok(())
-//! # }
-//! ```
-//!
-//! ### WASM/Browser Applications
-//!
-//! For web applications running in browsers:
-//!
-//! ```toml
-//! [dependencies]
-//! supabase-lib-rs = { version = "0.2.0", features = ["wasm", "auth", "database", "storage"] }
-//! wasm-bindgen = "0.2"
-//! wasm-bindgen-futures = "0.4"
-//! ```
-//!
-//! ```rust,no_run
-//! use supabase::Client;
-//! use wasm_bindgen::prelude::*;
-//!
-//! // In your WASM entry point:
-//! let client = Client::new("your-url", "your-key").unwrap();
-//!
-//! wasm_bindgen_futures::spawn_local(async move {
-//!     // Auth works in browser
-//!     match client.auth().sign_in_with_email_and_password("user@example.com", "password").await {
-//!         Ok(_response) => web_sys::console::log_1(&"Signed in!".into()),
-//!         Err(e) => web_sys::console::log_1(&format!("Error: {}", e).into()),
-//!     }
-//! });
-//! ```
-//!
-//! ## Advanced Examples
-//!
-//! ### Database Query Builder
-//!
-//! Build complex queries with the fluent API:
-//!
-//! ```rust,no_run
-//! # #[cfg(feature = "database")]
-//! # async fn example() -> supabase::Result<()> {
-//! use supabase::{Client, types::OrderDirection};
-//! use serde::{Deserialize, Serialize};
-//!
-//! #[derive(Deserialize, Serialize)]
-//! struct User {
-//!     id: i32,
-//!     email: String,
-//!     name: Option<String>,
-//!     active: bool,
-//! }
-//!
-//! let client = Client::new("your-url", "your-key")?;
-//!
-//! // Complex query with filters, ordering, and pagination
-//! let active_users: Vec<User> = client.database()
-//!     .from("users")
-//!     .select("id, email, name, active")
-//!     .eq("active", "true")
-//!     .ilike("email", "%@company.com")
-//!     .order("name", OrderDirection::Ascending)
-//!     .limit(50) // Limit to 50 results
-//!     .execute()
-//!     .await?;
-//!
-//! // Update with conditions - using a struct for updates
-//! use std::collections::HashMap;
-//! let mut update_data = HashMap::new();
-//! update_data.insert("last_seen", "now()");
-//!
-//! let _updated: Vec<User> = client.database()
-//!     .update("users")
-//!     .set(update_data)?
-//!     .eq("id", "123")
-//!     .execute()
-//!     .await?;
-//!
-//! // Delete with conditions
-//! let _deleted: Vec<User> = client.database()
-//!     .delete("users")
-//!     .eq("active", "false")
-//!     .execute()
-//!     .await?;
-//! # Ok(())
-//! # }
-//! ```
-//!
-//! ### File Storage Operations
-//!
-//! ```rust,no_run
-//! # #[cfg(feature = "storage")]
-//! # async fn example() -> supabase::Result<()> {
-//! use supabase::Client;
-//!
-//! let client = Client::new("your-url", "your-key")?;
-//! let storage = client.storage();
-//!
-//! // Create a bucket
-//! storage.create_bucket("avatars", "avatars", true).await?; // public bucket
-//!
-//! // Upload a file
-//! let file_content = b"Hello, world!";
-//! let upload_response = storage
-//!     .upload("avatars", "user123/avatar.jpg", file_content.to_vec().into(), None)
-//!     .await?;
-//!
-//! println!("Uploaded: {}", upload_response.key);
-//!
-//! // Download a file
-//! let file_data = storage
-//!     .download("avatars", "user123/avatar.jpg")
-//!     .await?;
-//!
-//! // Get public URL
-//! let public_url = storage.get_public_url("avatars", "user123/avatar.jpg");
-//! println!("Public URL: {}", public_url);
-//! # Ok(())
-//! # }
-//! ```
-//!
-//! ### Realtime Subscriptions
-//!
-//! Listen to database changes in real-time:
-//!
-//! ```rust,no_run
-//! # #[cfg(feature = "realtime")]
-//! # async fn example() -> supabase::Result<()> {
-//! use supabase::Client;
-//! # #[cfg(feature = "realtime")]
-//! use supabase::realtime::RealtimeEvent;
-//!
-//! let client = Client::new("your-url", "your-key")?;
-//! let realtime = client.realtime();
-//!
-//! // Connect to realtime
-//! realtime.connect().await?;
-//!
-//! // Subscribe to all changes on a table
-//! let sub1 = realtime
-//!     .channel("all-posts")
-//!     .table("posts")
-//!     .subscribe(|message| {
-//!         println!("Posts table changed: {:?}", message.event);
-//!         if let Some(record) = &message.payload.record {
-//!             println!("New data: {}", record);
-//!         }
-//!     })
-//!     .await?;
-//!
-//! // Subscribe to specific events with filters
-//! let sub2 = realtime
-//!     .channel("user-posts")
-//!     .table("posts")
-//!     .event(RealtimeEvent::Insert) // Only new posts
-//!     .filter("author_id=eq.123")   // Only from specific author
-//!     .subscribe(|message| {
-//!         println!("New post from author 123!");
-//!     })
-//!     .await?;
-//!
-//! // Later, unsubscribe
-//! realtime.unsubscribe(&sub1).await?;
-//! realtime.unsubscribe(&sub2).await?;
-//! realtime.disconnect().await?;
-//! # Ok(())
-//! # }
-//! ```
-//!
-//! ### Error Handling
-//!
-//! The library provides comprehensive error types:
-//!
-//! ```rust,no_run
-//! use supabase::{Client, Error};
-//!
-//! # async fn example() {
-//! let client = Client::new("your-url", "your-key").unwrap();
-//!
-//! match client.auth().sign_in_with_email_and_password("user@example.com", "wrong").await {
-//!     Ok(response) => println!("Success: {:?}", response.user),
-//!     Err(Error::Auth { message }) => println!("Auth error: {}", message),
-//!     Err(Error::Network { message }) => println!("Network error: {}", message),
-//!     Err(Error::Http(e)) => println!("HTTP error: {}", e),
-//!     Err(e) => println!("Other error: {}", e),
-//! }
-//! # }
-//! ```
-//!
-//! ## Configuration
-//!
-//! Customize the client behavior:
-//!
-//! ```rust,no_run
-//! use supabase::{Client, types::*};
-//!
-//! let config = SupabaseConfig {
-//!     url: "your-url".to_string(),
-//!     key: "your-key".to_string(),
-//!     http_config: HttpConfig {
-//!         timeout: 30,           // 30 second timeout
-//!         connect_timeout: 5,    // 5 second connect timeout
-//!         max_redirects: 3,      // Maximum 3 redirects
-//!         default_headers: std::collections::HashMap::new(),
-//!     },
-//!     auth_config: AuthConfig {
-//!         auto_refresh_token: true,  // Auto-refresh JWT tokens
-//!         refresh_threshold: 600,    // Refresh 10 minutes before expiry
-//!         persist_session: true,     // Persist session in storage
-//!         storage_key: "custom.auth.token".to_string(),
-//!     },
-//!     database_config: DatabaseConfig {
-//!         schema: "public".to_string(),
-//!         max_retries: 3,
-//!         retry_delay: 1000,
-//!     },
-//!     storage_config: StorageConfig {
-//!         upload_timeout: 300,                // 5 minute upload timeout
-//!         max_file_size: 100 * 1024 * 1024,   // 100MB max file size
-//!         default_bucket: Some("uploads".to_string()),
-//!     },
-//!     service_role_key: None,
+//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//! // Google OAuth
+//! let options = OAuthOptions {
+//!     redirect_to: Some("https://myapp.com/callback".to_string()),
+//!     scopes: Some(vec!["email".to_string(), "profile".to_string()]),
+//!     ..Default::default()
 //! };
 //!
-//! let client = Client::new_with_config(config).unwrap();
+//! let response = client.auth()
+//!     .sign_in_with_oauth(OAuthProvider::Google, Some(options))
+//!     .await?;
+//!
+//! println!("Redirect to: {}", response.url);
+//! # Ok(())
+//! # }
 //! ```
 //!
-//! ## Migration from JavaScript SDK
+//! ### Phone Authentication
 //!
-//! This library follows similar patterns to the JavaScript SDK:
+//! ```rust
+//! # async fn example() -> supabase::Result<()> {
+//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//! // Sign up with phone
+//! let auth_response = client.auth()
+//!     .sign_up_with_phone("+1234567890", "secure_password", None)
+//!     .await?;
 //!
-//! | JavaScript | Rust |
-//! |------------|------|
-//! | `supabase.auth.signInWithEmailAndPassword()` | `client.auth().sign_in_with_email_and_password()` |
-//! | `supabase.from('table').select()` | `client.database().from("table").select()` |
-//! | `supabase.storage.from('bucket').upload()` | `client.storage().upload("bucket", ...)` |
-//! | `supabase.channel().on().subscribe()` | `client.realtime().channel().subscribe()` |
+//! // Verify OTP
+//! let verified = client.auth()
+//!     .verify_otp("+1234567890", "123456", "sms")
+//!     .await?;
+//! # Ok(())
+//! # }
+//! ```
 //!
-//! ## Examples Repository
+//! ### Magic Links
 //!
-//! Check out the [examples](https://github.com/your-repo/supabase-lib-rs/tree/main/examples)
-//! directory for complete applications:
+//! ```rust
+//! # async fn example() -> supabase::Result<()> {
+//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//! // Send magic link
+//! client.auth()
+//!     .sign_in_with_magic_link(
+//!         "user@example.com",
+//!         Some("https://myapp.com/callback".to_string()),
+//!         None
+//!     )
+//!     .await?;
 //!
-//! - `basic_usage.rs` - Overview of all features
-//! - `auth_example.rs` - Authentication flows
-//! - `database_example.rs` - Complex database operations
-//! - `storage_example.rs` - File management
-//! - `realtime_example.rs` - Live subscriptions
-//! - `dioxus_example.rs` - Full-stack web app
-//! - `wasm_example.rs` - Browser integration
+//! println!("Magic link sent!");
+//! # Ok(())
+//! # }
+//! ```
 //!
-//! ## Contributing
+//! ### Anonymous Sign-in
 //!
-//! We welcome contributions! Please see [CONTRIBUTING.md](https://github.com/your-repo/supabase-lib-rs/blob/main/CONTRIBUTING.md)
-//! for guidelines.
+//! ```rust
+//! # async fn example() -> supabase::Result<()> {
+//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//! // Create anonymous user
+//! let auth_response = client.auth()
+//!     .sign_in_anonymously(None)
+//!     .await?;
 //!
-//! ## License
+//! if let Some(user) = auth_response.user {
+//!     println!("Anonymous user created: {}", user.id);
+//! }
+//! # Ok(())
+//! # }
+//! ```
 //!
-//! This project is licensed under the MIT License - see the [LICENSE](https://github.com/your-repo/supabase-lib-rs/blob/main/LICENSE)
-//! file for details.
+//! ## 🗄️ Advanced Database Operations
+//!
+//! ### Complex Queries
+//!
+//! ```rust,no_run
+//! # use supabase::Client;
+//! # use supabase::types::OrderDirection;
+//! # use serde_json::Value;
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//!   let posts: Vec<Value> = client.database()
+//!       .from("posts")
+//!       .select("*")
+//!       .and(|q| q.eq("published", "true").gte("created_at", "2024-01-01"))
+//!       .or(|q| q.eq("author", "admin").eq("status", "featured"))
+//!       .not(|q| q.eq("deleted", "true"))
+//!       .order("created_at", OrderDirection::Descending)
+//!       .limit(10)
+//!       .execute()
+//!       .await?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ### Query Joins
+//!
+//! ```rust,no_run
+//! # use supabase::Client;
+//! # use serde_json::Value;
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//!   let posts_with_authors: Vec<Value> = client.database()
+//!       .from("posts")
+//!       .select("id, title, users(name, email)")
+//!       .inner_join_as("users", "name", "author_name")
+//!       .execute()
+//!       .await?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ### Transactions
+//!
+//! ```rust,no_run
+//! # use supabase::Client;
+//! # use serde::{Deserialize, Serialize};
+//! # use serde_json::json;
+//! #
+//! # #[derive(Debug, Deserialize, Serialize)]
+//! # struct User { id: i32, name: String, email: String }
+//! #
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//!   let result: Vec<User> = client.database()
+//!       .begin_transaction()
+//!       .insert("users", json!({"name": "John", "email": "john@example.com"}))
+//!       .update("profiles", json!({"updated_at": "now()"}), "user_id = $1")
+//!       .commit()
+//!       .await?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## 🌐 Cross-Platform Support
+//!
+//! This library works seamlessly across different platforms:
+//!
+//! ### Native Applications (Tokio)
+//! ```rust
+//! // Full async/await support with Tokio runtime
+//! #[tokio::main]
+//! async fn main() -> supabase::Result<()> {
+//!     let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//!     // All operations available
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ### WebAssembly (WASM)
+//! ```rust
+//! use wasm_bindgen::prelude::*;
+//!
+//! #[wasm_bindgen]
+//! pub async fn initialize_supabase() -> Result<(), JsValue> {
+//!     let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")
+//!         .map_err(|e| JsValue::from_str(&e.to_string()))?;
+//!
+//!     // Enhanced error handling with platform-specific context
+//!     match client.database().from("users").select("*").execute::<serde_json::Value>().await {
+//!         Ok(users) => web_sys::console::log_1(&format!("Found {} users", users.len()).into()),
+//!         Err(e) => {
+//!             let error_msg = format!("Database error: {}", e);
+//!             web_sys::console::error_1(&error_msg.clone().into());
+//!             return Err(JsValue::from_str(&error_msg));
+//!         }
+//!     }
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ## 🛡️ Enhanced Error Handling
+//!
+//! v0.3.1 introduces comprehensive error context with platform-specific information:
+//!
+//! ```rust
+//! use supabase::error::{ErrorContext, PlatformContext};
+//!
+//! # async fn example() -> supabase::Result<()> {
+//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//! match client.auth().sign_in_with_email_and_password("user@example.com", "password").await {
+//!     Ok(response) => println!("Success!"),
+//!     Err(e) => {
+//!         // Check if error is retryable
+//!         if e.is_retryable() {
+//!             if let Some(retry_after) = e.retry_after() {
+//!                 println!("Retry after {} seconds", retry_after);
+//!             }
+//!         }
+//!
+//!         // Get platform-specific context
+//!         if let Some(context) = e.context() {
+//!             match &context.platform {
+//!                 Some(PlatformContext::Wasm { user_agent, available_apis, .. }) => {
+//!                     println!("WASM environment: {:?}", user_agent);
+//!                     println!("Available APIs: {:?}", available_apis);
+//!                 }
+//!                 Some(PlatformContext::Native { os_info, .. }) => {
+//!                     println!("Native environment: {:?}", os_info);
+//!                 }
+//!                 None => {}
+//!             }
+//!         }
+//!
+//!         // Get HTTP status code if available
+//!         if let Some(status) = e.status_code() {
+//!             println!("HTTP Status: {}", status);
+//!         }
+//!     }
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## 📚 Module Organization
+//!
+//! - [`auth`] - Authentication operations and OAuth providers
+//! - [`database`] - PostgreSQL database operations with advanced querying
+//! - [`storage`] - File upload, download, and management
+//! - [`realtime`] - WebSocket subscriptions for live data
+//! - [`functions`] - Edge Functions invocation
+//! - [`error`] - Enhanced error types with platform-specific context
+//! - [`types`] - Common type definitions and configurations
+//!
+//! ## 🔧 Configuration
+//!
+//! ```rust,no_run
+//! use supabase::{Client, types::{SupabaseConfig, HttpConfig, AuthConfig}};
+//! use std::time::Duration;
+//!
+//! # fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! let client = Client::new("YOUR_URL", "YOUR_KEY")?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## 🚧 Version History
+//!
+//! - **v0.3.1**: Enhanced Authentication with OAuth, phone auth, magic links, anonymous sign-in, improved error context
+//! - **v0.3.0**: Advanced Database Operations with joins, transactions, logical operators, C FFI foundation
+//! - **v0.2.0**: Production-ready client with comprehensive testing and documentation
+//!
+//! ## 📄 License
+//!
+//! This project is licensed under the MIT License.
 
 #[cfg(feature = "auth")]
 pub mod auth;
@@ -445,7 +384,7 @@ pub use functions::Functions;
 ///
 /// // Now you have access to Client, Error, Result, and all common types
 /// # fn example() -> Result<()> {
-/// let client = Client::new("url", "key")?;
+/// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
 /// # Ok(())
 /// # }
 /// ```
