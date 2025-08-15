@@ -11,14 +11,22 @@ A comprehensive, production-ready Rust client library for [Supabase](https://sup
 ## 🚀 Features
 
 - **🔐 Authentication** - Complete auth system with JWT handling, user management, and session persistence
+  - **🛡️ Multi-Factor Authentication (MFA)** - TOTP and SMS-based 2FA with QR code generation
+  - **🔑 OAuth Providers** - Google, GitHub, Discord, Apple, Twitter, Facebook, Microsoft, LinkedIn
+  - **📱 Phone Authentication** - SMS OTP and international phone number support
+  - **✨ Magic Links** - Passwordless email authentication
+  - **👻 Anonymous Sign-in** - Temporary sessions with account conversion
+  - **🔄 Advanced Token Management** - Smart refresh, metadata, local validation
 - **🗄️ Database** - Type-safe PostgREST API client with query builder pattern
+  - **🔗 Advanced Queries** - Logical operators, joins, batch operations, transactions
+  - **📊 Raw SQL Support** - Direct SQL execution with type safety
 - **📁 Storage** - Full-featured file storage with upload, download, and transformation capabilities
 - **⚡ Realtime** - WebSocket subscriptions for live database changes
-- **🛡️ Type Safety** - Comprehensive error handling and type definitions
+- **🛡️ Type Safety** - Comprehensive error handling and type definitions with rich context
 - **🔄 Async/Await** - Full async support with tokio
 - **🌐 WASM Support** - Full WebAssembly compatibility for web applications
 - **🦀 Cross-Platform** - Works on native (desktop/server) and WASM (web) targets
-- **🧪 Well Tested** - Extensive unit and integration test coverage
+- **🧪 Well Tested** - Extensive unit and integration test coverage (36+ tests)
 - **📚 Documentation** - Complete API documentation and examples
 
 ## 📦 Installation
@@ -27,7 +35,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-supabase-lib-rs = "0.2.0"
+supabase-lib-rs = "0.3.2"
 tokio = { version = "1.0", features = ["full"] }
 ```
 
@@ -132,6 +140,78 @@ let response = client
 
 // Sign out
 client.auth().sign_out().await?;
+```
+
+#### Multi-Factor Authentication (MFA)
+
+```rust
+use supabase::prelude::*;
+
+let client = Client::new("your-url", "your-key")?;
+
+// Setup TOTP (Google Authenticator, Authy, etc.)
+let totp_setup = client
+    .auth()
+    .setup_totp("My Authenticator App")
+    .await?;
+
+println!("Scan this QR code with your authenticator app:");
+println!("{}", totp_setup.qr_code);
+println!("Or enter this secret manually: {}", totp_setup.secret);
+
+// Setup SMS MFA with international phone number
+let sms_factor = client
+    .auth()
+    .setup_sms_mfa("+1-555-123-4567", "My Phone", Some("US"))
+    .await?;
+
+// Create MFA challenge
+let challenge = client
+    .auth()
+    .create_mfa_challenge(totp_setup.factor_id)
+    .await?;
+
+// Verify with TOTP code from authenticator app
+let auth_response = client
+    .auth()
+    .verify_mfa_challenge(
+        totp_setup.factor_id,
+        challenge.id,
+        "123456" // Code from authenticator app
+    )
+    .await?;
+
+// List configured MFA factors
+let factors = client.auth().list_mfa_factors().await?;
+for factor in factors {
+    println!("MFA Factor: {} ({})", factor.friendly_name, factor.factor_type);
+}
+```
+
+#### Advanced Token Management
+
+```rust
+// Check if token needs refresh with 5-minute buffer
+if client.auth().needs_refresh_with_buffer(300)? {
+    // Refresh token with advanced error handling
+    match client.auth().refresh_token_advanced().await {
+        Ok(session) => println!("Token refreshed successfully!"),
+        Err(e) if e.is_retryable() => {
+            println!("Retryable error - wait {} seconds", e.retry_after().unwrap_or(60));
+        }
+        Err(e) => println!("Authentication required: {}", e),
+    }
+}
+
+// Get detailed token information
+if let Some(metadata) = client.auth().get_token_metadata()? {
+    println!("Token expires at: {}", metadata.expires_at);
+    println!("Refresh count: {}", metadata.refresh_count);
+}
+
+// Validate token locally (no API call)
+let is_valid = client.auth().validate_token_local()?;
+println!("Token is valid: {}", is_valid);
 ```
 
 ### Database Operations

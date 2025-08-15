@@ -366,7 +366,7 @@ impl Error {
 }
 
 /// Detect current platform context
-fn detect_platform_context() -> PlatformContext {
+pub fn detect_platform_context() -> PlatformContext {
     #[cfg(target_arch = "wasm32")]
     {
         PlatformContext::Wasm {

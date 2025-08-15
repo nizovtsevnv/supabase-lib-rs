@@ -214,6 +214,129 @@ async fn main() -> Result<()> {
         }
     }
 
+    // ==== Multi-Factor Authentication (MFA) Examples ====
+
+    println!("\n=== MFA Demonstrations ===");
+
+    // List MFA factors
+    match client.auth().list_mfa_factors().await {
+        Ok(factors) => {
+            println!("Current MFA factors: {}", factors.len());
+            for factor in factors {
+                println!(
+                    "- {} ({}): {}",
+                    factor.friendly_name, factor.factor_type, factor.status
+                );
+            }
+        }
+        Err(e) => println!("Failed to list MFA factors: {}", e),
+    }
+
+    // Setup TOTP (Time-based One-Time Password)
+    match client.auth().setup_totp("My Authenticator App").await {
+        Ok(totp_setup) => {
+            println!("TOTP Setup successful!");
+            println!("Secret: {}", totp_setup.secret);
+            println!("QR Code:\n{}", totp_setup.qr_code);
+            println!("URI: {}", totp_setup.uri);
+
+            // Generate test code (for development only)
+            if let Ok(test_code) = client.auth().generate_totp_code(&totp_setup.secret) {
+                println!("Generated test code: {}", test_code);
+            }
+        }
+        Err(e) => println!("TOTP setup failed: {}", e),
+    }
+
+    // Setup SMS MFA with international phone number
+    match client
+        .auth()
+        .setup_sms_mfa("+1-555-123-4567", "My Phone", Some("US"))
+        .await
+    {
+        Ok(sms_factor) => {
+            println!("SMS MFA configured!");
+            println!("Factor ID: {}", sms_factor.id);
+            if let Some(phone) = sms_factor.phone {
+                println!("Phone: {}", phone);
+            }
+        }
+        Err(e) => println!("SMS MFA setup failed: {}", e),
+    }
+
+    // ==== Advanced OAuth Token Management ====
+
+    println!("\n=== Advanced Token Management ===");
+
+    // Get current token metadata
+    match client.auth().get_token_metadata() {
+        Ok(Some(metadata)) => {
+            println!("Token Metadata:");
+            println!("- Issued at: {}", metadata.issued_at);
+            println!("- Expires at: {}", metadata.expires_at);
+            println!("- Refresh count: {}", metadata.refresh_count);
+            println!("- Scopes: {:?}", metadata.scopes);
+            if let Some(device_id) = metadata.device_id {
+                println!("- Device ID: {}", device_id);
+            }
+        }
+        Ok(None) => println!("No active session for token metadata"),
+        Err(e) => println!("Failed to get token metadata: {}", e),
+    }
+
+    // Check if token needs refresh with buffer
+    match client.auth().needs_refresh_with_buffer(300) {
+        Ok(needs_refresh) => {
+            println!("Token needs refresh (5min buffer): {}", needs_refresh);
+
+            if needs_refresh {
+                match client.auth().refresh_token_advanced().await {
+                    Ok(new_session) => {
+                        println!("Token refreshed successfully!");
+                        println!("New expiry: {}", new_session.expires_at);
+                    }
+                    Err(e) => {
+                        println!("Token refresh failed: {}", e);
+
+                        // Check if error is retryable
+                        if e.is_retryable() {
+                            println!("Error is retryable");
+                            if let Some(retry_after) = e.retry_after() {
+                                println!("Retry after {} seconds", retry_after);
+                            }
+                        } else {
+                            println!("Error is not retryable - re-authentication required");
+                        }
+                    }
+                }
+            }
+        }
+        Err(e) => println!("Failed to check refresh status: {}", e),
+    }
+
+    // Get time until token expiry
+    match client.auth().time_until_expiry() {
+        Ok(Some(seconds)) => {
+            println!("Token expires in {} seconds", seconds);
+            if seconds < 300 {
+                println!("⚠️ Token expires soon - consider refreshing!");
+            }
+        }
+        Ok(None) => println!("No active session"),
+        Err(e) => println!("Failed to get expiry time: {}", e),
+    }
+
+    // Validate token locally (without API call)
+    match client.auth().validate_token_local() {
+        Ok(is_valid) => {
+            println!("Token is valid locally: {}", is_valid);
+            if !is_valid {
+                println!("⚠️ Token is invalid or expired locally");
+            }
+        }
+        Err(e) => println!("Token validation error: {}", e),
+    }
+
     // Final authentication status check
     println!("\n🔍 Final authentication status:");
     println!(

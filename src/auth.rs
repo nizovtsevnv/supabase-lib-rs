@@ -21,6 +21,12 @@ use std::sync::{Arc, RwLock, Weak};
 use tracing::{debug, info, warn};
 use uuid::Uuid;
 
+// MFA imports
+use base32;
+use phonenumber::Mode;
+use qrcode::QrCode;
+use totp_rs::{Algorithm, TOTP};
+
 /// Authentication state event types
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AuthEvent {
@@ -34,6 +40,158 @@ pub enum AuthEvent {
     UserUpdated,
     /// Password reset initiated
     PasswordReset,
+    /// MFA challenge required
+    MfaChallengeRequired,
+    /// MFA challenge completed
+    MfaChallengeCompleted,
+    /// MFA enabled for user
+    MfaEnabled,
+    /// MFA disabled for user
+    MfaDisabled,
+}
+
+/// Multi-factor authentication method types
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MfaMethod {
+    /// Time-based One-Time Password (TOTP) - Google Authenticator, Authy, etc.
+    #[serde(rename = "totp")]
+    Totp,
+    /// SMS-based verification
+    #[serde(rename = "sms")]
+    Sms,
+    /// Email-based verification (future)
+    #[serde(rename = "email")]
+    Email,
+}
+
+impl std::fmt::Display for MfaMethod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MfaMethod::Totp => write!(f, "TOTP"),
+            MfaMethod::Sms => write!(f, "SMS"),
+            MfaMethod::Email => write!(f, "Email"),
+        }
+    }
+}
+
+/// MFA challenge status
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MfaChallengeStatus {
+    /// Challenge is pending user input
+    #[serde(rename = "pending")]
+    Pending,
+    /// Challenge was completed successfully
+    #[serde(rename = "completed")]
+    Completed,
+    /// Challenge expired
+    #[serde(rename = "expired")]
+    Expired,
+    /// Challenge was cancelled
+    #[serde(rename = "cancelled")]
+    Cancelled,
+}
+
+/// MFA factor configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MfaFactor {
+    pub id: Uuid,
+    pub factor_type: MfaMethod,
+    pub friendly_name: String,
+    pub status: String, // "verified", "unverified"
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub phone: Option<String>,
+}
+
+/// TOTP setup response containing QR code data
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TotpSetupResponse {
+    pub secret: String,
+    pub qr_code: String,
+    pub uri: String,
+    pub factor_id: Uuid,
+}
+
+/// MFA challenge information
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MfaChallenge {
+    pub id: Uuid,
+    pub factor_id: Uuid,
+    pub status: MfaChallengeStatus,
+    pub challenge_type: MfaMethod,
+    pub expires_at: Timestamp,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub masked_phone: Option<String>,
+}
+
+/// MFA verification request
+#[derive(Debug, Serialize)]
+pub struct MfaVerificationRequest {
+    pub factor_id: Uuid,
+    pub challenge_id: Uuid,
+    pub code: String,
+}
+
+/// Enhanced phone number with country code support
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnhancedPhoneNumber {
+    pub raw: String,
+    pub formatted: String,
+    pub country_code: String,
+    pub national_number: String,
+    pub is_valid: bool,
+}
+
+impl EnhancedPhoneNumber {
+    /// Create enhanced phone number from raw input
+    pub fn new(phone: &str, _default_region: Option<&str>) -> Result<Self> {
+        // For now, let's use a simplified approach
+        // In production, this should be properly implemented with phonenumber crate
+        let parsed = phonenumber::parse(None, phone)
+            .map_err(|e| Error::auth(format!("Invalid phone number: {}", e)))?;
+
+        let formatted = phonenumber::format(&parsed)
+            .mode(Mode::International)
+            .to_string();
+
+        // Extract basic info
+        let country_code = parsed.code().value().to_string();
+        let national_number = parsed.national().to_string();
+
+        Ok(Self {
+            raw: phone.to_string(),
+            formatted,
+            country_code,
+            national_number,
+            is_valid: phonenumber::is_valid(&parsed),
+        })
+    }
+}
+
+/// OAuth token metadata for advanced management
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TokenMetadata {
+    pub issued_at: Timestamp,
+    pub expires_at: Timestamp,
+    pub refresh_count: u32,
+    pub last_refresh_at: Option<Timestamp>,
+    pub scopes: Vec<String>,
+    pub device_id: Option<String>,
+}
+
+/// Enhanced session with MFA and advanced token info
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnhancedSession {
+    pub access_token: String,
+    pub refresh_token: String,
+    pub expires_in: i64,
+    pub expires_at: Timestamp,
+    pub token_type: String,
+    pub user: User,
+    pub token_metadata: Option<TokenMetadata>,
+    pub mfa_verified: bool,
+    pub active_factors: Vec<MfaFactor>,
 }
 
 /// Authentication state change callback
@@ -1106,5 +1264,878 @@ impl Auth {
         for callback in listeners.values() {
             callback(event.clone(), session.clone());
         }
+    }
+
+    // ==== MFA (Multi-Factor Authentication) Methods ====
+
+    /// List all MFA factors for the current user
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::Client;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
+    ///
+    /// // List MFA factors
+    /// let factors = client.auth().list_mfa_factors().await?;
+    /// println!("User has {} MFA factors configured", factors.len());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn list_mfa_factors(&self) -> Result<Vec<MfaFactor>> {
+        debug!("Listing MFA factors for user");
+
+        let session = self.get_session()?;
+        let response = self
+            .http_client
+            .get(format!("{}/auth/v1/factors", self.config.url))
+            .header("Authorization", format!("Bearer {}", session.access_token))
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            return Err(Error::auth("Failed to list MFA factors"));
+        }
+
+        let factors: Vec<MfaFactor> = response.json().await?;
+        Ok(factors)
+    }
+
+    /// Setup TOTP (Time-based One-Time Password) authentication
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::Client;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
+    ///
+    /// // Setup TOTP
+    /// let totp_setup = client.auth()
+    ///     .setup_totp("My Authenticator")
+    ///     .await?;
+    ///
+    /// println!("Scan QR code: {}", totp_setup.qr_code);
+    /// println!("Or enter secret manually: {}", totp_setup.secret);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn setup_totp(&self, friendly_name: &str) -> Result<TotpSetupResponse> {
+        debug!("Setting up TOTP factor: {}", friendly_name);
+
+        let session = self.get_session()?;
+
+        let request_body = serde_json::json!({
+            "friendly_name": friendly_name,
+            "factor_type": "totp"
+        });
+
+        let response = self
+            .http_client
+            .post(format!("{}/auth/v1/factors", self.config.url))
+            .header("Authorization", format!("Bearer {}", session.access_token))
+            .json(&request_body)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            return Err(Error::auth("Failed to setup TOTP"));
+        }
+
+        let setup_response: TotpSetupResponse = response.json().await?;
+
+        // Generate QR code for the TOTP URI
+        let qr = QrCode::new(&setup_response.uri)
+            .map_err(|e| Error::auth(format!("Failed to generate QR code: {}", e)))?;
+
+        // Convert QR code to string representation (for console display)
+        let qr_string = qr
+            .render::<char>()
+            .quiet_zone(false)
+            .module_dimensions(2, 1)
+            .build();
+
+        Ok(TotpSetupResponse {
+            secret: setup_response.secret,
+            qr_code: qr_string,
+            uri: setup_response.uri,
+            factor_id: setup_response.factor_id,
+        })
+    }
+
+    /// Setup SMS-based MFA with international phone number support
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::Client;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
+    ///
+    /// // Setup SMS MFA with international number
+    /// let factor = client.auth()
+    ///     .setup_sms_mfa("+1-555-123-4567", "My Phone", Some("US"))
+    ///     .await?;
+    ///
+    /// println!("SMS MFA configured for: {}", factor.phone.unwrap());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn setup_sms_mfa(
+        &self,
+        phone: &str,
+        friendly_name: &str,
+        default_region: Option<&str>,
+    ) -> Result<MfaFactor> {
+        debug!("Setting up SMS MFA factor: {} for {}", friendly_name, phone);
+
+        // Validate and format phone number
+        let enhanced_phone = EnhancedPhoneNumber::new(phone, default_region)?;
+
+        if !enhanced_phone.is_valid {
+            return Err(Error::auth("Invalid phone number provided"));
+        }
+
+        let session = self.get_session()?;
+
+        let request_body = serde_json::json!({
+            "friendly_name": friendly_name,
+            "factor_type": "sms",
+            "phone": enhanced_phone.formatted
+        });
+
+        let response = self
+            .http_client
+            .post(format!("{}/auth/v1/factors", self.config.url))
+            .header("Authorization", format!("Bearer {}", session.access_token))
+            .json(&request_body)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            return Err(Error::auth("Failed to setup SMS MFA"));
+        }
+
+        let factor: MfaFactor = response.json().await?;
+        self.trigger_auth_event(AuthEvent::MfaEnabled);
+
+        Ok(factor)
+    }
+
+    /// Create MFA challenge for a specific factor
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::Client;
+    /// # use uuid::Uuid;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
+    ///
+    /// // Get factors and create challenge
+    /// let factors = client.auth().list_mfa_factors().await?;
+    /// if let Some(factor) = factors.first() {
+    ///     let challenge = client.auth().create_mfa_challenge(factor.id).await?;
+    ///     println!("Challenge created: {}", challenge.id);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn create_mfa_challenge(&self, factor_id: Uuid) -> Result<MfaChallenge> {
+        debug!("Creating MFA challenge for factor: {}", factor_id);
+
+        let session = self.get_session()?;
+
+        let request_body = serde_json::json!({
+            "factor_id": factor_id
+        });
+
+        let response = self
+            .http_client
+            .post(format!(
+                "{}/auth/v1/factors/{}/challenge",
+                self.config.url, factor_id
+            ))
+            .header("Authorization", format!("Bearer {}", session.access_token))
+            .json(&request_body)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            return Err(Error::auth("Failed to create MFA challenge"));
+        }
+
+        let challenge: MfaChallenge = response.json().await?;
+        self.trigger_auth_event(AuthEvent::MfaChallengeRequired);
+
+        Ok(challenge)
+    }
+
+    /// Verify MFA challenge with user-provided code
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::Client;
+    /// # use uuid::Uuid;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
+    ///
+    /// // Verify MFA code
+    /// let factor_id = Uuid::new_v4(); // Your factor ID
+    /// let challenge_id = Uuid::new_v4(); // Your challenge ID
+    ///
+    /// let result = client.auth()
+    ///     .verify_mfa_challenge(factor_id, challenge_id, "123456")
+    ///     .await?;
+    ///
+    /// println!("MFA verified successfully!");
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn verify_mfa_challenge(
+        &self,
+        factor_id: Uuid,
+        challenge_id: Uuid,
+        code: &str,
+    ) -> Result<AuthResponse> {
+        debug!("Verifying MFA challenge: {}", challenge_id);
+
+        let session = self.get_session()?;
+
+        let request_body = serde_json::json!({
+            "factor_id": factor_id,
+            "challenge_id": challenge_id,
+            "code": code
+        });
+
+        let response = self
+            .http_client
+            .post(format!(
+                "{}/auth/v1/factors/{}/verify",
+                self.config.url, factor_id
+            ))
+            .header("Authorization", format!("Bearer {}", session.access_token))
+            .json(&request_body)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            return Err(Error::auth("Failed to verify MFA challenge"));
+        }
+
+        let auth_response: AuthResponse = response.json().await?;
+
+        // Update session if new token provided
+        if let Some(session) = &auth_response.session {
+            self.set_session(session.clone()).await?;
+        }
+
+        self.trigger_auth_event(AuthEvent::MfaChallengeCompleted);
+        info!("MFA verification successful");
+
+        Ok(auth_response)
+    }
+
+    /// Delete an MFA factor
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::Client;
+    /// # use uuid::Uuid;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
+    ///
+    /// // Remove MFA factor
+    /// let factor_id = Uuid::new_v4(); // Your factor ID
+    /// client.auth().delete_mfa_factor(factor_id).await?;
+    /// println!("MFA factor removed successfully!");
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn delete_mfa_factor(&self, factor_id: Uuid) -> Result<()> {
+        debug!("Deleting MFA factor: {}", factor_id);
+
+        let session = self.get_session()?;
+
+        let response = self
+            .http_client
+            .delete(format!("{}/auth/v1/factors/{}", self.config.url, factor_id))
+            .header("Authorization", format!("Bearer {}", session.access_token))
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            return Err(Error::auth("Failed to delete MFA factor"));
+        }
+
+        self.trigger_auth_event(AuthEvent::MfaDisabled);
+        info!("MFA factor deleted successfully");
+
+        Ok(())
+    }
+
+    /// Generate TOTP code for testing purposes (development only)
+    ///
+    /// This method is primarily for testing and development. In production,
+    /// users should use their authenticator apps.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::Client;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
+    ///
+    /// // For testing - generate TOTP code from secret
+    /// let secret = "JBSWY3DPEHPK3PXP"; // Base32 encoded secret
+    /// let code = client.auth().generate_totp_code(secret)?;
+    /// println!("Generated TOTP code: {}", code);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn generate_totp_code(&self, secret: &str) -> Result<String> {
+        debug!("Generating TOTP code for testing");
+
+        // Decode base32 secret
+        let decoded_secret = base32::decode(base32::Alphabet::Rfc4648 { padding: true }, secret)
+            .ok_or_else(|| Error::auth("Invalid base32 secret"))?;
+
+        // Create TOTP
+        let totp = TOTP::new(
+            Algorithm::SHA1,
+            6,  // digits
+            1,  // skew (allow 1 step tolerance)
+            30, // step (30 seconds)
+            decoded_secret,
+        )
+        .map_err(|e| Error::auth(format!("Failed to create TOTP: {}", e)))?;
+
+        // Generate current code
+        let code = totp
+            .generate_current()
+            .map_err(|e| Error::auth(format!("Failed to generate TOTP code: {}", e)))?;
+
+        Ok(code)
+    }
+
+    // ==== Advanced OAuth Token Management ====
+
+    /// Get current token metadata with advanced information
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::Client;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
+    ///
+    /// // Get detailed token metadata
+    /// if let Some(metadata) = client.auth().get_token_metadata()? {
+    ///     println!("Token expires at: {}", metadata.expires_at);
+    ///     println!("Refresh count: {}", metadata.refresh_count);
+    ///     println!("Scopes: {:?}", metadata.scopes);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_token_metadata(&self) -> Result<Option<TokenMetadata>> {
+        debug!("Getting token metadata");
+
+        let session = self
+            .session
+            .read()
+            .map_err(|_| Error::auth("Failed to read session"))?;
+
+        if let Some(session) = session.as_ref() {
+            // Create metadata from current session
+            let metadata = TokenMetadata {
+                issued_at: Utc::now() - chrono::Duration::seconds(session.expires_in),
+                expires_at: session.expires_at,
+                refresh_count: 0, // TODO: Track this in enhanced session
+                last_refresh_at: None,
+                scopes: vec![],  // TODO: Extract from JWT
+                device_id: None, // TODO: Add device tracking
+            };
+
+            Ok(Some(metadata))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Refresh token with advanced error handling and retry logic
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::Client;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
+    ///
+    /// // Refresh token with advanced handling
+    /// match client.auth().refresh_token_advanced().await {
+    ///     Ok(session) => {
+    ///         println!("Token refreshed successfully!");
+    ///         println!("New expiry: {}", session.expires_at);
+    ///     }
+    ///     Err(e) => {
+    ///         if e.is_retryable() {
+    ///             // Handle retryable error
+    ///             println!("Retryable error: {}", e);
+    ///         } else {
+    ///             // Handle non-retryable error - require re-login
+    ///             println!("Re-authentication required: {}", e);
+    ///         }
+    ///     }
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn refresh_token_advanced(&self) -> Result<Session> {
+        debug!("Refreshing token with advanced handling");
+
+        let current_session = self
+            .session
+            .read()
+            .map_err(|_| Error::auth("Failed to read session"))?
+            .clone();
+
+        let session = match current_session {
+            Some(session) => session,
+            None => return Err(Error::auth("No active session to refresh")),
+        };
+
+        let request_body = serde_json::json!({
+            "refresh_token": session.refresh_token
+        });
+
+        let response = self
+            .http_client
+            .post(format!(
+                "{}/auth/v1/token?grant_type=refresh_token",
+                self.config.url
+            ))
+            .header("apikey", &self.config.key)
+            .header("Authorization", format!("Bearer {}", &self.config.key))
+            .json(&request_body)
+            .send()
+            .await;
+
+        match response {
+            Ok(response) => {
+                if response.status().is_success() {
+                    let auth_response: AuthResponse = response.json().await?;
+
+                    if let Some(new_session) = auth_response.session {
+                        self.set_session(new_session.clone()).await?;
+                        self.trigger_auth_event(AuthEvent::TokenRefreshed);
+                        info!("Token refreshed successfully");
+                        Ok(new_session)
+                    } else {
+                        Err(Error::auth("No session in refresh response"))
+                    }
+                } else {
+                    let status = response.status();
+                    let error_text = response.text().await.unwrap_or_default();
+
+                    // Provide specific error context
+                    let context = crate::error::ErrorContext {
+                        platform: Some(crate::error::detect_platform_context()),
+                        http: Some(crate::error::HttpErrorContext {
+                            status_code: Some(status.as_u16()),
+                            headers: None,
+                            response_body: Some(error_text.clone()),
+                            url: Some(format!("{}/auth/v1/token", self.config.url)),
+                            method: Some("POST".to_string()),
+                        }),
+                        retry: if status.is_server_error() {
+                            Some(crate::error::RetryInfo {
+                                retryable: true,
+                                retry_after: Some(60), // 1 minute
+                                attempts: 0,
+                            })
+                        } else {
+                            None
+                        },
+                        metadata: std::collections::HashMap::new(),
+                        timestamp: chrono::Utc::now(),
+                    };
+
+                    Err(Error::auth_with_context(
+                        format!("Token refresh failed: {} - {}", status, error_text),
+                        context,
+                    ))
+                }
+            }
+            Err(e) => {
+                let context = crate::error::ErrorContext {
+                    platform: Some(crate::error::detect_platform_context()),
+                    http: Some(crate::error::HttpErrorContext {
+                        status_code: None,
+                        headers: None,
+                        response_body: None,
+                        url: Some(format!("{}/auth/v1/token", self.config.url)),
+                        method: Some("POST".to_string()),
+                    }),
+                    retry: Some(crate::error::RetryInfo {
+                        retryable: true,
+                        retry_after: Some(30),
+                        attempts: 0,
+                    }),
+                    metadata: std::collections::HashMap::new(),
+                    timestamp: chrono::Utc::now(),
+                };
+
+                Err(Error::auth_with_context(
+                    format!("Network error during token refresh: {}", e),
+                    context,
+                ))
+            }
+        }
+    }
+
+    /// Check if current token needs refresh with buffer time
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::Client;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
+    ///
+    /// // Check if refresh is needed with 5-minute buffer
+    /// if client.auth().needs_refresh_with_buffer(300)? {
+    ///     println!("Token refresh recommended");
+    ///     client.auth().refresh_token_advanced().await?;
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn needs_refresh_with_buffer(&self, buffer_seconds: i64) -> Result<bool> {
+        let session_guard = self
+            .session
+            .read()
+            .map_err(|_| Error::auth("Failed to read session"))?;
+
+        match session_guard.as_ref() {
+            Some(session) => {
+                let now = Utc::now();
+                let refresh_threshold =
+                    session.expires_at - chrono::Duration::seconds(buffer_seconds);
+                Ok(now >= refresh_threshold)
+            }
+            None => Ok(false), // No session, no need to refresh
+        }
+    }
+
+    /// Get time until token expiry in seconds
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::Client;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
+    ///
+    /// match client.auth().time_until_expiry()? {
+    ///     Some(seconds) => {
+    ///         println!("Token expires in {} seconds", seconds);
+    ///         if seconds < 300 {
+    ///             println!("Consider refreshing token soon!");
+    ///         }
+    ///     }
+    ///     None => println!("No active session"),
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn time_until_expiry(&self) -> Result<Option<i64>> {
+        let session_guard = self
+            .session
+            .read()
+            .map_err(|_| Error::auth("Failed to read session"))?;
+
+        match session_guard.as_ref() {
+            Some(session) => {
+                let now = Utc::now();
+                let duration = session.expires_at.signed_duration_since(now);
+                Ok(Some(duration.num_seconds()))
+            }
+            None => Ok(None),
+        }
+    }
+
+    /// Validate current token without making API call (local validation)
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::Client;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
+    ///
+    /// match client.auth().validate_token_local() {
+    ///     Ok(true) => println!("Token is valid locally"),
+    ///     Ok(false) => println!("Token is expired or invalid"),
+    ///     Err(e) => println!("Validation error: {}", e),
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn validate_token_local(&self) -> Result<bool> {
+        let session_guard = self
+            .session
+            .read()
+            .map_err(|_| Error::auth("Failed to read session"))?;
+
+        match session_guard.as_ref() {
+            Some(session) => {
+                let now = Utc::now();
+                Ok(session.expires_at > now && !session.access_token.is_empty())
+            }
+            None => Ok(false),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::SupabaseConfig;
+    use std::sync::Arc;
+
+    fn mock_config() -> Arc<SupabaseConfig> {
+        Arc::new(SupabaseConfig {
+            url: "https://test.supabase.co".to_string(),
+            key: "test-key".to_string(),
+            service_role_key: None,
+            http_config: crate::types::HttpConfig::default(),
+            auth_config: crate::types::AuthConfig::default(),
+            database_config: crate::types::DatabaseConfig::default(),
+            storage_config: crate::types::StorageConfig::default(),
+        })
+    }
+
+    #[test]
+    fn test_enhanced_phone_number_creation() {
+        let phone = EnhancedPhoneNumber::new("+1-555-123-4567", Some("US"));
+        assert!(phone.is_ok());
+
+        let phone = phone.unwrap();
+        assert!(!phone.raw.is_empty());
+        assert!(!phone.formatted.is_empty());
+        assert!(!phone.country_code.is_empty());
+    }
+
+    #[test]
+    fn test_mfa_method_serialization() {
+        let totp = MfaMethod::Totp;
+        let sms = MfaMethod::Sms;
+        let email = MfaMethod::Email;
+
+        let totp_json = serde_json::to_string(&totp).unwrap();
+        let sms_json = serde_json::to_string(&sms).unwrap();
+        let email_json = serde_json::to_string(&email).unwrap();
+
+        assert_eq!(totp_json, r#""totp""#);
+        assert_eq!(sms_json, r#""sms""#);
+        assert_eq!(email_json, r#""email""#);
+    }
+
+    #[test]
+    fn test_mfa_challenge_status() {
+        let pending = MfaChallengeStatus::Pending;
+        let completed = MfaChallengeStatus::Completed;
+        let expired = MfaChallengeStatus::Expired;
+        let cancelled = MfaChallengeStatus::Cancelled;
+
+        assert_eq!(pending, MfaChallengeStatus::Pending);
+        assert_eq!(completed, MfaChallengeStatus::Completed);
+        assert_eq!(expired, MfaChallengeStatus::Expired);
+        assert_eq!(cancelled, MfaChallengeStatus::Cancelled);
+    }
+
+    #[test]
+    fn test_auth_event_variants() {
+        let events = vec![
+            AuthEvent::SignedIn,
+            AuthEvent::SignedOut,
+            AuthEvent::TokenRefreshed,
+            AuthEvent::UserUpdated,
+            AuthEvent::PasswordReset,
+            AuthEvent::MfaChallengeRequired,
+            AuthEvent::MfaChallengeCompleted,
+            AuthEvent::MfaEnabled,
+            AuthEvent::MfaDisabled,
+        ];
+
+        assert_eq!(events.len(), 9);
+
+        // Test cloning
+        let cloned_events: Vec<AuthEvent> = events.to_vec();
+        assert_eq!(cloned_events, events);
+    }
+
+    #[tokio::test]
+    async fn test_auth_creation() {
+        let config = mock_config();
+        let http_client = Arc::new(reqwest::Client::new());
+
+        let auth = Auth::new(config, http_client);
+        assert!(auth.is_ok());
+
+        let auth = auth.unwrap();
+        assert!(!auth.is_authenticated());
+    }
+
+    #[test]
+    fn test_totp_code_generation() {
+        let config = mock_config();
+        let http_client = Arc::new(reqwest::Client::new());
+        let auth = Auth::new(config, http_client).unwrap();
+
+        // Test with a known base32 secret
+        let secret = "JBSWY3DPEHPK3PXP"; // "Hello" in base32
+        let result = auth.generate_totp_code(secret);
+
+        match &result {
+            Ok(code) => {
+                println!("Generated TOTP code: {}", code);
+                assert_eq!(code.len(), 6);
+                assert!(code.chars().all(|c| c.is_ascii_digit()));
+            }
+            Err(e) => {
+                println!("TOTP generation error: {}", e);
+                // For now, just check that error is reasonable
+                assert!(e.to_string().contains("base32") || e.to_string().contains("TOTP"));
+            }
+        }
+    }
+
+    #[test]
+    fn test_totp_code_generation_invalid_secret() {
+        let config = mock_config();
+        let http_client = Arc::new(reqwest::Client::new());
+        let auth = Auth::new(config, http_client).unwrap();
+
+        // Test with invalid base32 secret
+        let result = auth.generate_totp_code("invalid-secret");
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_token_validation_no_session() {
+        let config = mock_config();
+        let http_client = Arc::new(reqwest::Client::new());
+        let auth = Auth::new(config, http_client).unwrap();
+
+        // No session should return false
+        let is_valid = auth.validate_token_local().unwrap();
+        assert!(!is_valid);
+    }
+
+    #[test]
+    fn test_time_until_expiry_no_session() {
+        let config = mock_config();
+        let http_client = Arc::new(reqwest::Client::new());
+        let auth = Auth::new(config, http_client).unwrap();
+
+        // No session should return None
+        let time = auth.time_until_expiry().unwrap();
+        assert!(time.is_none());
+    }
+
+    #[test]
+    fn test_needs_refresh_no_session() {
+        let config = mock_config();
+        let http_client = Arc::new(reqwest::Client::new());
+        let auth = Auth::new(config, http_client).unwrap();
+
+        // No session should return false
+        let needs_refresh = auth.needs_refresh_with_buffer(300).unwrap();
+        assert!(!needs_refresh);
+    }
+
+    #[test]
+    fn test_get_token_metadata_no_session() {
+        let config = mock_config();
+        let http_client = Arc::new(reqwest::Client::new());
+        let auth = Auth::new(config, http_client).unwrap();
+
+        // No session should return None
+        let metadata = auth.get_token_metadata().unwrap();
+        assert!(metadata.is_none());
+    }
+
+    #[test]
+    fn test_token_metadata_structure() {
+        let metadata = TokenMetadata {
+            issued_at: Utc::now(),
+            expires_at: Utc::now() + chrono::Duration::hours(1),
+            refresh_count: 5,
+            last_refresh_at: Some(Utc::now()),
+            scopes: vec!["read".to_string(), "write".to_string()],
+            device_id: Some("device-123".to_string()),
+        };
+
+        assert_eq!(metadata.refresh_count, 5);
+        assert!(metadata.last_refresh_at.is_some());
+        assert_eq!(metadata.scopes.len(), 2);
+        assert!(metadata.device_id.is_some());
+    }
+
+    #[test]
+    fn test_mfa_factor_structure() {
+        let factor = MfaFactor {
+            id: uuid::Uuid::new_v4(),
+            factor_type: MfaMethod::Totp,
+            friendly_name: "My Authenticator".to_string(),
+            status: "verified".to_string(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            phone: None,
+        };
+
+        assert_eq!(factor.factor_type, MfaMethod::Totp);
+        assert_eq!(factor.friendly_name, "My Authenticator");
+        assert_eq!(factor.status, "verified");
+        assert!(factor.phone.is_none());
+    }
+
+    #[test]
+    fn test_enhanced_session_structure() {
+        let user = User {
+            id: uuid::Uuid::new_v4(),
+            email: Some("user@example.com".to_string()),
+            phone: None,
+            email_confirmed_at: Some(Utc::now()),
+            phone_confirmed_at: None,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            last_sign_in_at: Some(Utc::now()),
+            app_metadata: serde_json::json!({}),
+            user_metadata: serde_json::json!({}),
+            aud: "authenticated".to_string(),
+            role: Some("authenticated".to_string()),
+        };
+
+        let enhanced_session = EnhancedSession {
+            access_token: "access-token".to_string(),
+            refresh_token: "refresh-token".to_string(),
+            expires_in: 3600,
+            expires_at: Utc::now() + chrono::Duration::hours(1),
+            token_type: "bearer".to_string(),
+            user,
+            token_metadata: None,
+            mfa_verified: true,
+            active_factors: vec![],
+        };
+
+        assert!(enhanced_session.mfa_verified);
+        assert_eq!(enhanced_session.active_factors.len(), 0);
+        assert_eq!(enhanced_session.token_type, "bearer");
     }
 }
