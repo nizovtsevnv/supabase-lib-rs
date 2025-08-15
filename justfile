@@ -253,7 +253,7 @@ bloat:
 # Install development tools
 install-tools:
     @echo "🔧 Installing development tools..."
-    cargo install cargo-audit cargo-deny cargo-outdated cargo-edit cargo-watch cargo-tarpaulin cargo-bloat
+    cargo install cargo-audit cargo-deny cargo-outdated cargo-edit cargo-watch cargo-tarpaulin cargo-bloat cargo-sweep
 
 # Run example
 example name:
@@ -335,3 +335,51 @@ nix-shell:
 nix-info:
     @echo "❄️ Showing flake information..."
     nix flake show
+
+# ========================
+# 🧹 CLEANUP COMMANDS (cargo-sweep)
+# ========================
+
+# Check what would be cleaned (dry-run)
+sweep-dry:
+    @echo "🧹 Checking what would be cleaned..."
+    cargo sweep -m 1GB -d
+
+# Clean old build artifacts (keep target under 1GB)
+sweep:
+    @echo "🧹 Cleaning old build artifacts..."
+    cargo sweep -m 1GB
+    @echo "✅ Cleanup completed!"
+    @du -sh target/ || echo "target/ folder not found"
+
+# Aggressive clean - remove entire target directory
+sweep-all:
+    @echo "🧹 Removing entire target directory..."
+    rm -rf target/
+    @echo "✅ Complete cleanup done!"
+
+# Clean artifacts older than specified days
+sweep-old DAYS="7":
+    @echo "🧹 Cleaning artifacts older than {{DAYS}} days..."
+    cargo sweep -t {{DAYS}}
+    @echo "✅ Cleanup completed!"
+    @du -sh target/ || echo "target/ folder not found"
+
+# Show current target directory size
+target-size:
+    @echo "📊 Current target directory size:"
+    @du -sh target/ 2>/dev/null || echo "target/ folder not found"
+
+# ========================
+# 🔧 ENHANCED COMMANDS
+# ========================
+
+# Enhanced check with cleanup
+check-sweep: sweep check
+
+# Enhanced test with cleanup
+test-sweep: sweep test-all
+
+# Full development cycle with cleanup
+dev-cycle: sweep format lint test build
+    @echo "✅ Full development cycle completed with cleanup!"
