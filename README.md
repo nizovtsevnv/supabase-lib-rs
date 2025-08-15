@@ -17,7 +17,7 @@ A comprehensive, production-ready Rust client library for [Supabase](https://sup
 - 📡 **Realtime**: WebSocket subscriptions with Presence System, Broadcast Messages, Advanced Filters, and Connection Pooling
 - ⚡ **Cross-Platform**: Full Native (Tokio) and WebAssembly (WASM) support
 - 🛡️ **Type Safety**: Full Rust type system integration
-- 🔧 **Well Tested**: 65+ comprehensive tests
+- 🔧 **Well Tested**: 113 comprehensive tests (41 unit + 72 doc tests)
 
 ## 📦 Installation
 
@@ -25,7 +25,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-supabase-lib-rs = "0.4.2"
+supabase-lib-rs = "0.5.1"
 tokio = { version = "1.0", features = ["full"] }
 ```
 

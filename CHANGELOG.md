@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2025-08-15
+
+> **🔧 Quality & Stability Focus**: Refined v0.5.0 with enhanced code quality, better testing, and improved development practices.
+> Python bindings delayed to future version to ensure production-ready quality.
+
+### 🔧 Technical Improvements
+
+#### Code Quality & Testing
+- **Enhanced Test Suite**: All 41 unit tests and 72 documentation tests passing
+- **Clippy Compliance**: Zero clippy warnings with strict linting rules
+- **Documentation Coverage**: Complete API documentation with working examples
+- **Format Consistency**: Automated code formatting with rustfmt
+- **Security Audit**: Clean security audit with automated vulnerability scanning
+
+#### Development Experience
+- **Streamlined Workflow**: Improved `justfile` with comprehensive development commands
+- **Nix Environment**: Enhanced development environment with consistent tooling
+- **Git Hooks**: Pre-commit hooks ensuring code quality standards
+- **Build Optimization**: Faster builds with optimized dependency management
+
+### 🐍 Python Bindings Status
+
+- **Postponed to v0.5.2**: Python bindings development postponed to ensure production quality
+- **Foundation Ready**: Basic PyO3 infrastructure prepared but requires additional development
+- **Quality First**: Focusing on core Rust client stability before language bindings
+
+### 📊 Quality Metrics
+
+- **✅ 41 Unit Tests** - All passing with comprehensive coverage
+- **✅ 72 Doc Tests** - All code examples in documentation work correctly
+- **✅ Zero Clippy Warnings** - Strict linting compliance
+- **✅ Security Clean** - No security vulnerabilities detected
+- **✅ Format Compliant** - Consistent code formatting throughout
+
+### 🎯 Philosophy Maintained
+
+- **Quality over Speed**: Prioritizing production-ready code over feature velocity
+- **Maintainable Codebase**: Clean, well-documented, and tested code
+- **Conservative Scope**: Focused roadmap preventing feature creep
+- **Long-term Stability**: Sustainable development practices
+
 ## [0.5.0] - 2025-08-15
 
 > **🎯 Major Philosophy Shift**: Refocused roadmap on **Quality over Quantity**.

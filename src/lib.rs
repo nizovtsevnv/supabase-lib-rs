@@ -352,6 +352,7 @@ pub mod performance;
 pub mod ffi;
 
 // #[cfg(feature = "python")]
+// #[cfg(feature = "python")]
 // pub mod python;
 
 pub mod types;

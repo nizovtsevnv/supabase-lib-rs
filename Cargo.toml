@@ -1,6 +1,6 @@
 [package]
 name = "supabase-lib-rs"
-version = "0.5.0"
+version = "0.5.1"
 description = "A comprehensive, production-ready Rust client library for Supabase with full cross-platform support (native + WASM)"
 authors = ["Nizovtsev Nikolay <nizovtsevnv@users.noreply.github.com>"]
 license = "MIT"
@@ -204,7 +204,7 @@ all = ["auth", "database", "storage", "functions", "realtime", "native", "wasm",
        "session-management", "session-encryption", "webauthn", "session-monitoring", "security-headers"]
 # FFI features
 ffi = ["auth", "database", "storage", "functions", "native"]
-# python = ["pyo3", "ffi"]  # Disabled until v0.5.1 due to PyO3 security issue
+python = ["pyo3", "ffi"]
 web-sys = ["dep:web-sys"]
 
 [[example]]
@@ -251,8 +251,8 @@ path = "examples/storage_advanced_example.rs"
 name = "functions_performance_example"
 path = "examples/functions_performance_example.rs"
 
-# Python bindings support (temporarily disabled until v0.5.1)
-# [dependencies.pyo3]
-# version = "0.24.1"  # Updated to fix RUSTSEC-2025-0020
-# optional = true
-# features = ["extension-module", "abi3-py38"]
+# Python bindings support (enabled for v0.5.1)
+[dependencies.pyo3]
+version = "0.24.1"  # Updated to fix RUSTSEC-2025-0020
+optional = true
+features = ["extension-module", "abi3-py38"]
