@@ -1,7 +1,13 @@
 # 🗺️ Roadmap for supabase-lib-rs
 
 > **Project Philosophy**: The **best Rust client** for Supabase API.
-> **Quality over Quantity** - Deep, reliable, and maintainable core functionality.
+> 
+> **Core Principles**:
+> - **Quality over Speed** - Deep, reliable, and maintainable core functionality
+> - **No Overhead** - Zero-cost abstractions, efficient resource usage
+> - **No Anti-patterns** - Best practices, idiomatic Rust code
+> - **Conservative Approach** - Well-tested, long-term sustainable solutions
+> - **Focus on Core** - Excellent Supabase API client, nothing more
 
 ## Version History
 
@@ -93,6 +99,8 @@
 
 ## 🎯 Future Roadmap - **Conservative & Maintainable**
 
+> **Note**: This roadmap prioritizes quality over speed. Features may be delayed, refined, or removed to maintain our core principles of no overhead, no anti-patterns, and long-term maintainability.
+
 ### v0.5.1 - Quality & Stability Focus ✅
 
 > **Status**: **COMPLETED** - Refined v0.5.0 with enhanced code quality and testing
@@ -151,13 +159,11 @@
 - [ ] **API Reference**: Complete, searchable API documentation
 - [ ] **Migration Guides**: Easy transition from other Supabase clients
 - [ ] **Best Practices**: Comprehensive usage patterns and recommendations
-- [ ] **Video Tutorials**: Visual learning resources
 
 **🛠️ Developer Tools**
 
 - [ ] **Testing Utilities**: Mock Supabase server for unit testing
 - [ ] **Debug Helpers**: Enhanced logging and debugging tools
-- [ ] **IDE Support**: Better IDE integration and tooling
 - [ ] **Examples Repository**: Real-world usage examples and patterns
 
 ---
@@ -246,5 +252,5 @@
 
 ---
 
-_Last Updated: January 2025_
-_Version: 0.5.0_
+_Last Updated: August 2025_
+_Version: 0.5.1_

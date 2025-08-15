@@ -1,8 +1,8 @@
 # Supabase Rust Client
 
 [![CI](https://github.com/nizovtsevnv/supabase-lib-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/nizovtsevnv/supabase-lib-rs/actions/workflows/ci.yml)
-[![Crates.io](https://img.shields.io/crates/v/supabase-lib-rs)](https://crates.io/crates/supabase-lib-rs)
 [![docs.rs](https://docs.rs/supabase-lib-rs/badge.svg)](https://docs.rs/supabase-lib-rs)
+[![Crates.io](https://img.shields.io/crates/v/supabase-lib-rs)](https://crates.io/crates/supabase-lib-rs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A comprehensive, production-ready Rust client library for [Supabase](https://supabase.com/). This library provides a clean, type-safe, and efficient interface to interact with all Supabase services.
@@ -85,39 +85,6 @@ async fn main() -> Result<()> {
 | **[Changelog](CHANGELOG.md)** | Release history and changes |
 | **[Roadmap](ROADMAP.md)** | Future development plans |
 | **[API Documentation](https://docs.rs/supabase-lib-rs)** | Complete API reference |
-
-## 🚀 Release & Distribution
-
-### Automated Publishing
-
-This project uses GitHub Actions for automated publishing:
-
-- **📦 crates.io**: Automatically publishes on GitHub releases
-- **🐍 PyPI**: Cross-platform wheels built on releases  
-- **📚 docs.rs**: Documentation auto-generated from crates.io
-- **🏗️  Cross-platform libraries**: Built for Linux, macOS, Windows (x86_64 + ARM64)
-
-### Manual Publishing
-
-For manual releases, use the GitHub Actions workflows:
-
-**🦀 Rust (crates.io):**
-1. Go to **Actions** → **Manual Publish to crates.io**
-2. Click **Run workflow**
-3. Optionally specify version or run dry-run first
-4. Monitor the workflow for success
-
-**🐍 Python (PyPI):**
-1. Go to **Actions** → **Manual Publish to PyPI**
-2. Click **Run workflow**  
-3. Optionally specify version or run dry-run (TestPyPI)
-4. Monitor the workflow for success
-
-### Version Management
-
-- Version bumps trigger automatic releases when tagged (`git tag v0.5.1`)
-- Follow semantic versioning: `MAJOR.MINOR.PATCH`
-- Update `CHANGELOG.md` before releases
 
 ## 🤝 Contributing
 
