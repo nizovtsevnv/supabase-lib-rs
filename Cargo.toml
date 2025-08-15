@@ -1,6 +1,6 @@
 [package]
 name = "supabase-lib-rs"
-version = "0.4.1"
+version = "0.4.2"
 description = "A comprehensive, production-ready Rust client library for Supabase with full cross-platform support (native + WASM)"
 authors = ["Nizovtsev Nikolay <nizovtsevnv@users.noreply.github.com>"]
 license = "MIT"
@@ -123,6 +123,8 @@ hostname = { version = "0.4", optional = true }
 mac_address = { version = "1.1", optional = true }
 num_cpus = { version = "1.0", optional = true }
 futures = { version = "0.3", optional = true }
+tokio-stream = { version = "0.1.17", features = ["io-util"], optional = true }
+tokio-util = { version = "0.7.16", features = ["io"], optional = true }
 
 
 # WASM dependencies
@@ -164,7 +166,7 @@ chrono = "0.4"
 
 # Features for conditional compilation
 [features]
-default = ["auth", "database", "storage", "native", "session-management"]
+default = ["auth", "database", "storage", "functions", "native", "session-management", "performance"]
 
 # Core features
 auth = ["jsonwebtoken"]
@@ -172,6 +174,7 @@ database = []
 storage = []
 functions = []
 realtime = ["tokio-tungstenite", "futures-util", "async-trait"]
+performance = ["tokio", "tokio-stream", "tokio-util"]
 
 # Platform features
 native = ["tokio"]
@@ -230,3 +233,19 @@ path = "examples/wasm_example.rs"
 [[example]]
 name = "session_management_example"
 path = "examples/session_management_example.rs"
+
+[[example]]
+name = "dioxus_example"
+path = "examples/dioxus_example.rs"
+
+[[example]]
+name = "functions_example"
+path = "examples/functions_example.rs"
+
+[[example]]
+name = "storage_advanced_example"
+path = "examples/storage_advanced_example.rs"
+
+[[example]]
+name = "functions_performance_example"
+path = "examples/functions_performance_example.rs"

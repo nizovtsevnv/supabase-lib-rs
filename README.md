@@ -25,7 +25,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-supabase-lib-rs = "0.4.1"
+supabase-lib-rs = "0.4.2"
 tokio = { version = "1.0", features = ["full"] }
 ```
 
@@ -603,7 +603,7 @@ While this library provides comprehensive Supabase functionality, some advanced 
 
 ### Missing Modules
 
-- ~~**Edge Functions**: `functions.invoke()` for serverless functions~~ ✅ **Added in v0.3.0**
+- ~~**Edge Functions**: `functions.invoke()` for serverless functions~~ ✅ **Added in v0.3.0** 🚀 **Enhanced in v0.4.2**
 - **Management API**: Project management and admin operations (planned for v0.4.0)
 
 ### Workarounds

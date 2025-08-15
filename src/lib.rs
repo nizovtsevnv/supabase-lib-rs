@@ -345,6 +345,9 @@ pub mod storage;
 #[cfg(feature = "functions")]
 pub mod functions;
 
+#[cfg(feature = "performance")]
+pub mod performance;
+
 #[cfg(feature = "ffi")]
 pub mod ffi;
 

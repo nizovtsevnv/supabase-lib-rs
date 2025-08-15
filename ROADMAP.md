@@ -57,21 +57,21 @@
 
 ## Future Roadmap
 
-### 🎯 v0.4.2 - Edge Functions & Performance
+### ✅ v0.4.2 - Edge Functions & Performance
 
 **⚡ Edge Functions**
 
-- [ ] **Streaming Responses**: Support for streaming function responses
-- [ ] **Function Metadata**: Enhanced function introspection
-- [ ] **Local Development**: Local function testing utilities
-- [ ] **Error Handling**: Better function error reporting
+- [x] **Streaming Responses**: Support for streaming function responses
+- [x] **Function Metadata**: Enhanced function introspection
+- [x] **Local Development**: Local function testing utilities
+- [x] **Error Handling**: Better function error reporting
 
 **🚀 Performance Optimization**
 
-- [ ] **Connection Pooling**: Database connection management
-- [ ] **Request Caching**: Intelligent API response caching
-- [ ] **Batch Operations**: Multi-request optimization
-- [ ] **Compression**: Request/response compression
+- [x] **Connection Pooling**: HTTP client connection management
+- [x] **Request Caching**: Intelligent API response caching
+- [x] **Batch Operations**: Multi-request optimization
+- [x] **Compression**: Request/response compression support
 
 ---
 
