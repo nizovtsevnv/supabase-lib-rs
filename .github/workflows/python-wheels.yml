@@ -1,11 +1,14 @@
 name: Build Python Wheels
 
 on:
-  push:
-    branches: [main, develop]
-    tags: ["v*"]
-  pull_request:
-    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build"
+        required: true
+        default: "v0.5.1"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -148,10 +151,7 @@ jobs:
     name: Publish to PyPI
     runs-on: ubuntu-latest
     needs: [build-wheels, build-sdist, test-wheels]
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    environment:
-      name: pypi
-      url: https://pypi.org/p/supabase-lib-rs
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     permissions:
       id-token: write # For trusted publishing
 
@@ -174,31 +174,4 @@ jobs:
           packages-dir: final-dist/
           verbose: true
 
-  # Create GitHub release
-  create-release:
-    name: Create GitHub Release
-    runs-on: ubuntu-latest
-    needs: publish
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    permissions:
-      contents: write
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: release-assets
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            release-assets/wheels-*/*.whl
-            release-assets/sdist/*.tar.gz
-          generate_release_notes: true
-          draft: false
-          prerelease: ${{ contains(github.ref, '-') }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

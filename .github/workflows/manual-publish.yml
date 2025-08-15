@@ -1,0 +1,89 @@
+name: Manual Publish to crates.io
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish (leave empty to use current Cargo.toml version)"
+        required: false
+        type: string
+      dry_run:
+        description: "Run dry-run only (don't actually publish)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  manual-publish:
+    name: Manual Publish to crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Update version if specified
+        if: inputs.version != ''
+        run: |
+          echo "Updating version to ${{ inputs.version }}"
+          sed -i 's/^version = ".*"/version = "${{ inputs.version }}"/' Cargo.toml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Cargo.toml
+          git commit -m "chore: bump version to ${{ inputs.version }}"
+
+      - name: Run quality checks
+        run: |
+          echo "🔍 Running format check..."
+          cargo fmt --all -- --check
+
+          echo "🔍 Running clippy..."
+          cargo clippy --all-targets --all-features -- -D warnings
+
+          echo "🔍 Building package..."
+          cargo build --release --all-features
+
+          echo "🔍 Running tests..."
+          cargo test --all-features --workspace
+
+      - name: Dry run publish
+        run: |
+          echo "🏃 Running cargo publish --dry-run..."
+          cargo publish --dry-run
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: Actual publish
+        if: inputs.dry_run == false
+        run: |
+          echo "🚀 Publishing to crates.io..."
+          cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: Create git tag if version was updated
+        if: inputs.version != '' && inputs.dry_run == false
+        run: |
+          git tag "v${{ inputs.version }}"
+          git push origin "v${{ inputs.version }}"
+
+      - name: Summary
+        run: |
+          if [ "${{ inputs.dry_run }}" == "true" ]; then
+            echo "✅ Dry run completed successfully! No actual publication occurred."
+          else
+            echo "✅ Package published successfully to crates.io!"
+            if [ "${{ inputs.version }}" != "" ]; then
+              echo "📦 Version: ${{ inputs.version }}"
+              echo "🏷️  Git tag: v${{ inputs.version }}"
+            else
+              echo "📦 Version: $(grep '^version =' Cargo.toml | cut -d'"' -f2)"
+            fi
+          fi
