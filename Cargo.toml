@@ -1,6 +1,6 @@
 [package]
 name = "supabase-lib-rs"
-version = "0.3.2"
+version = "0.4.0"
 description = "A comprehensive, production-ready Rust client library for Supabase with full cross-platform support (native + WASM)"
 authors = ["Nizovtsev Nikolay <nizovtsevnv@users.noreply.github.com>"]
 license = "MIT"
@@ -85,6 +85,19 @@ phonenumber = "0.3"
 # Enhanced storage and caching
 dirs = "5.0"
 
+# Session management and storage
+serde_with = { version = "3.14", optional = true }
+indexmap = { version = "2.6", optional = true }
+parking_lot = { version = "0.12", optional = true }
+
+# Cross-platform storage dependencies moved to WASM section below
+
+# WebAuthn support
+webauthn-rs-proto = { version = "0.5", optional = true }
+
+# Time utilities
+time = { version = "0.3", optional = true, features = ["serde", "formatting"] }
+
 # Native dependencies (non-WASM)
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # HTTP client
@@ -97,6 +110,19 @@ reqwest = { version = "0.12", features = [
 # Async runtime (optional for realtime)
 tokio = { version = "1.0", features = ["full"], optional = true }
 tokio-tungstenite = { version = "0.21", features = ["rustls-tls-native-roots"], optional = true }
+
+# Native-specific storage and crypto
+aes-gcm = { version = "0.10", optional = true }
+argon2 = { version = "0.5", optional = true }
+hex = { version = "0.4", optional = true }
+rand = { version = "0.8", optional = true }
+keyring = { version = "3", optional = true }
+
+# Additional native dependencies for session management
+hostname = { version = "0.4", optional = true }
+mac_address = { version = "1.1", optional = true }
+num_cpus = { version = "1.0", optional = true }
+futures = { version = "0.3", optional = true }
 
 
 # WASM dependencies
@@ -113,8 +139,17 @@ getrandom = { version = "0.2", features = ["js"] }
 # WASM runtime (optional for wasm feature)
 wasm-bindgen = { version = "0.2", optional = true }
 wasm-bindgen-futures = { version = "0.4", optional = true }
-web-sys = { version = "0.3", features = ["console", "WebSocket", "MessageEvent", "CloseEvent", "ErrorEvent"], optional = true }
+web-sys = { version = "0.3", features = [
+    "console", "WebSocket", "MessageEvent", "CloseEvent", "ErrorEvent",
+    "Window", "Navigator", "Storage", "Event", "EventTarget",
+    "BroadcastChannel", "StorageEvent", "Document",
+    "Location", "History", "Crypto"
+], optional = true }
 js-sys = { version = "0.3", optional = true }
+
+# WASM-specific session storage
+gloo-storage = { version = "0.3", optional = true }
+gloo-timers = { version = "0.3", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
@@ -129,7 +164,7 @@ chrono = "0.4"
 
 # Features for conditional compilation
 [features]
-default = ["auth", "database", "storage", "native"]
+default = ["auth", "database", "storage", "native", "session-management"]
 
 # Core features
 auth = ["jsonwebtoken"]
@@ -149,12 +184,22 @@ wasm = [
     "web-sys/MessageEvent",
     "web-sys/CloseEvent",
     "web-sys/ErrorEvent",
-    "js-sys"
+    "js-sys",
+    "gloo-storage",
+    "gloo-timers"
 ]
 
+# v0.4.0 Session Management features
+session-management = ["serde_with", "indexmap", "parking_lot", "hostname", "mac_address", "num_cpus", "futures", "async-trait"]
+session-encryption = ["aes-gcm", "argon2", "rand", "keyring", "hex"]
+webauthn = ["webauthn-rs-proto"]
+session-monitoring = ["time"]
+security-headers = []
+
 # All features for testing
-all = ["auth", "database", "storage", "functions", "realtime", "native", "wasm"]
-# Новый feature для C FFI
+all = ["auth", "database", "storage", "functions", "realtime", "native", "wasm",
+       "session-management", "session-encryption", "webauthn", "session-monitoring", "security-headers"]
+# FFI feature
 ffi = ["auth", "database", "storage", "functions", "native"]
 web-sys = ["dep:web-sys"]
 
@@ -181,3 +226,7 @@ path = "examples/realtime_example.rs"
 [[example]]
 name = "wasm_example"
 path = "examples/wasm_example.rs"
+
+[[example]]
+name = "session_management_example"
+path = "examples/session_management_example.rs"

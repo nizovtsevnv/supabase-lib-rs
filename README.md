@@ -17,6 +17,11 @@ A comprehensive, production-ready Rust client library for [Supabase](https://sup
   - **✨ Magic Links** - Passwordless email authentication
   - **👻 Anonymous Sign-in** - Temporary sessions with account conversion
   - **🔄 Advanced Token Management** - Smart refresh, metadata, local validation
+- **💾 Session Management** - Advanced session persistence and security
+  - **🔄 Cross-tab Sync** - Real-time session synchronization across browser tabs/windows
+  - **🏪 Platform Storage** - localStorage (WASM), filesystem (Native), encrypted options
+  - **🔒 Session Encryption** - AES-256-GCM encryption with key derivation
+  - **📊 Session Events** - Event-driven session monitoring and lifecycle management
 - **🗄️ Database** - Type-safe PostgREST API client with query builder pattern
   - **🔗 Advanced Queries** - Logical operators, joins, batch operations, transactions
   - **📊 Raw SQL Support** - Direct SQL execution with type safety
@@ -26,7 +31,7 @@ A comprehensive, production-ready Rust client library for [Supabase](https://sup
 - **🔄 Async/Await** - Full async support with tokio
 - **🌐 WASM Support** - Full WebAssembly compatibility for web applications
 - **🦀 Cross-Platform** - Works on native (desktop/server) and WASM (web) targets
-- **🧪 Well Tested** - Extensive unit and integration test coverage (36+ tests)
+- **🧪 Well Tested** - Extensive unit and integration test coverage (54+ tests)
 - **📚 Documentation** - Complete API documentation and examples
 
 ## 📦 Installation
@@ -35,7 +40,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-supabase-lib-rs = "0.3.2"
+supabase-lib-rs = "0.4.0"
 tokio = { version = "1.0", features = ["full"] }
 ```
 
@@ -212,6 +217,56 @@ if let Some(metadata) = client.auth().get_token_metadata()? {
 // Validate token locally (no API call)
 let is_valid = client.auth().validate_token_local()?;
 println!("Token is valid: {}", is_valid);
+```
+
+#### Session Management
+
+```rust
+use supabase::session::{SessionManager, SessionManagerConfig, storage::create_default_storage};
+
+// Create session manager with default storage
+let storage_backend = create_default_storage()?;
+let config = SessionManagerConfig {
+    storage_backend,
+    enable_cross_tab_sync: true,
+    session_key_prefix: "myapp_".to_string(),
+    default_expiry_seconds: 3600, // 1 hour
+    enable_encryption: false,
+    encryption_key: None,
+    enable_monitoring: true,
+    max_memory_sessions: 100,
+    sync_interval_seconds: 30,
+};
+
+let session_manager = SessionManager::new(config);
+session_manager.initialize().await?;
+
+// Store session with cross-tab sync
+let session_id = session_manager.store_session(session).await?;
+println!("Session stored: {}", session_id);
+
+// Set up session event listener
+let listener_id = session_manager.on_session_event(|event| {
+    match event {
+        SessionEvent::Created { session_id } => {
+            println!("New session created: {}", session_id);
+        }
+        SessionEvent::Updated { session_id, changes } => {
+            println!("Session {} updated: {:?}", session_id, changes);
+        }
+        SessionEvent::Destroyed { session_id, reason } => {
+            println!("Session {} destroyed: {}", session_id, reason);
+        }
+        _ => {}
+    }
+});
+
+// List all active sessions
+let sessions = session_manager.list_sessions().await?;
+println!("Active sessions: {}", sessions.len());
+
+// Session will automatically sync across browser tabs/windows
+// and persist according to platform (localStorage, filesystem, etc.)
 ```
 
 ### Database Operations

@@ -326,6 +326,9 @@
 #[cfg(feature = "auth")]
 pub mod auth;
 
+#[cfg(feature = "session-management")]
+pub mod session;
+
 pub mod client;
 
 #[cfg(feature = "database")]

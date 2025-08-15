@@ -180,6 +180,20 @@ pub enum Error {
         message: String,
         context: ErrorContext,
     },
+
+    /// Platform-specific error
+    #[error("Platform error: {message}")]
+    Platform {
+        message: String,
+        context: ErrorContext,
+    },
+
+    /// Cryptographic error
+    #[error("Crypto error: {message}")]
+    Crypto {
+        message: String,
+        context: ErrorContext,
+    },
 }
 
 impl Error {
@@ -362,6 +376,38 @@ impl Error {
         self.context()
             .and_then(|ctx| ctx.http.as_ref())
             .and_then(|http| http.status_code)
+    }
+
+    /// Create a platform error
+    pub fn platform<S: Into<String>>(message: S) -> Self {
+        Self::Platform {
+            message: message.into(),
+            context: ErrorContext::default(),
+        }
+    }
+
+    /// Create a platform error with context
+    pub fn platform_with_context<S: Into<String>>(message: S, context: ErrorContext) -> Self {
+        Self::Platform {
+            message: message.into(),
+            context,
+        }
+    }
+
+    /// Create a cryptographic error
+    pub fn crypto<S: Into<String>>(message: S) -> Self {
+        Self::Crypto {
+            message: message.into(),
+            context: ErrorContext::default(),
+        }
+    }
+
+    /// Create a cryptographic error with context
+    pub fn crypto_with_context<S: Into<String>>(message: S, context: ErrorContext) -> Self {
+        Self::Crypto {
+            message: message.into(),
+            context,
+        }
     }
 }
 

@@ -5,6 +5,72 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-08-15
+
+### 🚀 Major Features Added
+
+#### 🔐 Advanced Session Management
+
+- **Session Persistence**: Cross-tab session synchronization with automatic state management
+- **Platform-aware Storage**: Intelligent storage backend selection (localStorage for WASM, filesystem for Native)
+- **Cross-tab Synchronization**: Real-time session sync using BroadcastChannel (WASM) and filesystem IPC (Native)
+- **Session Encryption**: AES-256-GCM encryption for secure session storage with key derivation
+- **Session Monitoring**: Real-time session state tracking with event-driven architecture
+- **Session Events**: Comprehensive event system (Created, Updated, Accessed, Destroyed, etc.)
+
+#### 🏗️ Modular Architecture
+
+- **SessionManager**: Centralized session management with configuration-driven setup
+- **SessionStorage Trait**: Pluggable storage backends (Memory, LocalStorage, FileSystem, Encrypted)
+- **CrossTabChannel Trait**: Platform-specific cross-tab communication abstractions
+- **Device Detection**: Browser fingerprinting (WASM) and system information gathering (Native)
+
+#### 🛡️ Security Enhancements
+
+- **Session Encryption**: Optional AES-256-GCM encryption for sensitive session data
+- **Key Management**: Secure key derivation from passwords with salt generation
+- **Device Fingerprinting**: Unique device identification for enhanced security
+- **Secure Storage**: OS keyring integration for Native platforms
+
+#### 🌍 Cross-Platform Implementation
+
+- **WASM-specific**: BroadcastChannel for cross-tab sync, localStorage/IndexedDB for persistence
+- **Native-specific**: File-based IPC, filesystem storage, OS keyring integration
+- **Platform Detection**: Automatic platform-aware feature selection
+
+### ⚡ Performance Improvements
+
+- **Efficient Lock Management**: Parking_lot for high-performance synchronization
+- **Memory Optimization**: Smart session cleanup and expiry management
+- **Async Architecture**: Full async/await support throughout session management
+- **Background Tasks**: Automatic session cleanup and monitoring
+
+### 🧪 Testing & Quality
+
+- **54 Unit Tests**: Comprehensive test coverage for all modules
+- **Integration Examples**: Production-ready session management example
+- **Cross-platform Testing**: WASM and Native platform validation
+- **Memory Safety**: Zero unsafe code with Rust's ownership guarantees
+
+### 🔧 Developer Experience
+
+- **Type Safety**: Full compile-time type checking for all session operations
+- **Feature Flags**: Granular feature control (`session-management`, `session-encryption`, etc.)
+- **Rich Documentation**: Comprehensive rustdoc with examples
+- **Error Handling**: Detailed error contexts with platform-specific information
+
+### 🔄 Breaking Changes
+
+- **New Dependencies**: Added optional dependencies for session management features
+- **Feature Flags**: Session management functionality requires `session-management` feature
+- **Error Types**: New error variants (`Platform`, `Crypto`) for session management
+
+### 📚 Documentation
+
+- **Updated Examples**: New session management example demonstrating all features
+- **Platform Guides**: Documentation for WASM vs Native differences
+- **Security Guidelines**: Best practices for session encryption and key management
+
 ## [0.3.2] - 2025-08-15
 
 ### 🚀 Major Features Added
