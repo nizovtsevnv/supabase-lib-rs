@@ -351,6 +351,9 @@ pub mod performance;
 #[cfg(feature = "ffi")]
 pub mod ffi;
 
+// #[cfg(feature = "python")]
+// pub mod python;
+
 pub mod types;
 
 // Internal modules

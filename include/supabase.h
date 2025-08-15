@@ -5,13 +5,14 @@
 extern "C" {
 #endif
 
-#include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
 
-/* Opaque handle to Supabase client */
+// Forward declarations
 typedef struct SupabaseClient SupabaseClient;
 
-/* Error codes */
+// Enhanced error codes
 typedef enum {
     SUPABASE_SUCCESS = 0,
     SUPABASE_INVALID_INPUT = 1,
@@ -19,14 +20,17 @@ typedef enum {
     SUPABASE_AUTH_ERROR = 3,
     SUPABASE_DATABASE_ERROR = 4,
     SUPABASE_STORAGE_ERROR = 5,
+    SUPABASE_FUNCTIONS_ERROR = 6,
+    SUPABASE_REALTIME_ERROR = 7,
+    SUPABASE_RUNTIME_ERROR = 8,
     SUPABASE_UNKNOWN_ERROR = 99
 } SupabaseError;
 
-/* Client management */
+// Client management
 SupabaseClient* supabase_client_new(const char* url, const char* key);
 void supabase_client_free(SupabaseClient* client);
 
-/* Authentication */
+// Authentication
 SupabaseError supabase_auth_sign_in(
     SupabaseClient* client,
     const char* email,
@@ -35,7 +39,15 @@ SupabaseError supabase_auth_sign_in(
     size_t result_len
 );
 
-/* Database operations */
+SupabaseError supabase_auth_sign_up(
+    SupabaseClient* client,
+    const char* email,
+    const char* password,
+    char* result,
+    size_t result_len
+);
+
+// Database operations
 SupabaseError supabase_database_select(
     SupabaseClient* client,
     const char* table,
@@ -44,14 +56,35 @@ SupabaseError supabase_database_select(
     size_t result_len
 );
 
-/* Error handling */
-SupabaseError supabase_get_last_error(char* buffer, size_t buffer_len);
+SupabaseError supabase_database_insert(
+    SupabaseClient* client,
+    const char* table,
+    const char* json_data,
+    char* result,
+    size_t result_len
+);
 
-/* Version information */
-const char* supabase_version(void);
+// Storage operations
+SupabaseError supabase_storage_list_buckets(
+    SupabaseClient* client,
+    char* result,
+    size_t result_len
+);
+
+// Edge Functions
+SupabaseError supabase_functions_invoke(
+    SupabaseClient* client,
+    const char* function_name,
+    const char* json_payload,
+    char* result,
+    size_t result_len
+);
+
+// Error handling
+SupabaseError supabase_get_last_error(char* buffer, size_t buffer_len);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* SUPABASE_H */
+#endif // SUPABASE_H
