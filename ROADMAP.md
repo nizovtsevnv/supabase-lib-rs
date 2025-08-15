@@ -3,96 +3,61 @@
 > **Project Philosophy**: Provide convenient and fully functional access to Supabase API.
 > No excessive functionality - only what directly improves work with Supabase.
 
-## ✅ v0.2.0 - Production-Ready Supabase Client
+## Version History
 
-**🚀 Library Foundation**
+### v0.2.0 ✅
 
-- ✅ **Core API Coverage**: Auth, Database, Storage, Realtime, Edge Functions
-- ✅ **Cross-Platform**: Native (Tokio) + WASM support
-- ✅ **Production Quality**: Comprehensive testing, error handling
-- ✅ **Documentation**: Ready for docs.rs
+- Core Client Architecture
+- Basic Authentication (sign up/in, session management)
+- Database Operations (CRUD with PostgREST)
+- Cross-platform support (Native + WASM)
 
----
+### v0.3.0 ✅
 
-## ✅ v0.3.0 - Database Advanced Operations
+- Advanced Authentication (OAuth, MFA, phone auth)
+- Enhanced Database queries (complex joins, transactions)
+- Storage operations (file upload/download, transformations)
+- Improved error handling and type safety
 
-**🗄️ Advanced Database Features**
+### v0.3.1 ✅
 
-- ✅ **Logical Operators**: Complex `and()`, `or()`, `not()` query logic
-- ✅ **Query Joins**: `inner_join()`, `left_join()` support
-- ✅ **Batch Operations**: `upsert()`, bulk operations
-- ✅ **Transactions**: Database transaction support
-- ✅ **Raw SQL**: Direct SQL execution with type safety
+- WebSocket-based Realtime subscriptions
+- Cross-platform WebSocket abstraction
+- Session persistence improvements
+- Enhanced WASM compatibility
 
-### 🌍 Cross-Platform Foundation
+### v0.3.2 ✅
 
-- ✅ **C FFI Interface**: Basic C-compatible bindings
-- ✅ **Build Artifacts**: Multi-platform library builds
+- Multi-Factor Authentication (TOTP & SMS)
+- Advanced OAuth Token Management
+- Enhanced Phone Number Processing
+- Comprehensive API improvements
 
----
+### v0.4.0 ✅
 
-## ✅ v0.3.1 - Authentication Enhancements
+- Session Management & Auth Middleware
+- Cross-tab synchronization
+- Platform-aware session storage
+- Session encryption & monitoring
+- Device fingerprinting
 
-**🔐 Complete Authentication System**
+### v0.4.1 ✅
 
-- ✅ **Auth State Events**: `onAuthStateChange` listeners
-- ✅ **OAuth Providers**: Google, GitHub, Discord, Apple, Twitter, Facebook, Microsoft, LinkedIn
-- ✅ **Phone Authentication**: SMS OTP support
-- ✅ **Anonymous Sign-in**: Temporary user sessions
-- ✅ **Magic Links**: Passwordless authentication
-- ✅ **Password Recovery**: Enhanced reset flows
+#### Storage & Realtime Enhancements
 
-### 🌐 Enhanced Error Handling
+- **Resumable Uploads**: Large file upload with chunking, progress tracking, and resume capability
+- **Advanced Metadata**: File tagging, custom metadata, and powerful search functionality
+- **Storage Policies**: Row Level Security helpers with policy templates and access testing
+- **Storage Events**: Real-time file operation notifications
+- **Presence System**: User online/offline tracking with metadata
+- **Broadcast Messages**: Cross-client messaging system
+- **Advanced Filters**: Complex filtering for realtime subscriptions
+- **Connection Pooling**: Efficient WebSocket connection management
+- Enhanced cross-platform compatibility and performance optimizations
 
-- ✅ **Platform-specific Errors**: Rich context with retry logic
-- ✅ **WASM Optimization**: Better web builds
+## Future Roadmap
 
----
-
-## ✅ v0.3.2 - Advanced Authentication & Error Management
-
-**🔐 Advanced Authentication**
-
-- ✅ **Multi-Factor Authentication**: TOTP and SMS-based 2FA
-- ✅ **Advanced OAuth**: Token refresh, metadata management
-- ✅ **International Phone**: Enhanced phone auth with country codes
-- ✅ **Token Validation**: Local validation without API calls
-- ✅ **Enhanced Error Recovery**: Retryable error detection
-
----
-
-## ✅ v0.4.0 - Session Management & Security
-
-**🔐 Session Management**
-
-- ✅ **Session Persistence**: Cross-tab synchronization
-- ✅ **Platform-aware Storage**: localStorage/IndexedDB/filesystem
-- ✅ **Session Encryption**: Secure storage with AES-256-GCM
-- ✅ **Cross-tab Sync**: BroadcastChannel (WASM) + filesystem (Native)
-- ✅ **Session Monitoring**: Real-time session tracking
-- ✅ **Device Detection**: Browser/system fingerprinting
-
----
-
-## 🎯 v0.4.1 - Storage & Realtime Enhancements
-
-**📁 Advanced Storage**
-
-- [ ] **Resumable Uploads**: Large file upload with resume capability
-- [ ] **Storage Events**: Real-time file upload/delete notifications
-- [ ] **Advanced Metadata**: File tags, custom metadata, search
-- [ ] **Storage Policies**: Enhanced RLS for file access
-
-**📡 Realtime Improvements**
-
-- [ ] **Connection Pooling**: Efficient websocket management
-- [ ] **Presence System**: User presence tracking
-- [ ] **Broadcast Messages**: Cross-client messaging
-- [ ] **Advanced Filters**: Complex realtime subscriptions
-
----
-
-## 🎯 v0.4.2 - Edge Functions & Performance
+### 🎯 v0.4.2 - Edge Functions & Performance
 
 **⚡ Edge Functions**
 

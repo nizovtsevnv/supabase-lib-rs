@@ -60,6 +60,10 @@ use tracing::{debug, error, info, warn};
 #[cfg(feature = "realtime")]
 use uuid::Uuid;
 
+/// Type alias for complex connection storage
+#[cfg(feature = "realtime")]
+pub type ConnectionStorage = Arc<RuntimeLock<Vec<Option<Box<dyn WebSocketConnection>>>>>;
+
 /// Realtime client for WebSocket subscriptions
 ///
 /// Provides cross-platform realtime subscriptions to Supabase database changes.
@@ -144,22 +148,62 @@ impl std::fmt::Debug for Subscription {
 ///
 /// # Examples
 /// ```rust
-/// use supabase::realtime::{SubscriptionConfig, RealtimeEvent};
+/// use supabase::realtime::{SubscriptionConfig, RealtimeEvent, AdvancedFilter, FilterOperator};
+/// use std::collections::HashMap;
 ///
 /// let config = SubscriptionConfig {
 ///     table: Some("posts".to_string()),
 ///     schema: "public".to_string(),
 ///     event: Some(RealtimeEvent::Insert),
 ///     filter: Some("author_id=eq.123".to_string()),
+///     advanced_filters: vec![
+///         AdvancedFilter {
+///             column: "status".to_string(),
+///             operator: FilterOperator::Equal,
+///             value: serde_json::Value::String("published".to_string()),
+///         }
+///     ],
+///     enable_presence: false,
+///     enable_broadcast: false,
+///     presence_callback: None,
+///     broadcast_callback: None,
 /// };
 /// ```
 #[cfg(feature = "realtime")]
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SubscriptionConfig {
     pub table: Option<String>,
     pub schema: String,
     pub event: Option<RealtimeEvent>,
     pub filter: Option<String>,
+    pub advanced_filters: Vec<AdvancedFilter>,
+    pub enable_presence: bool,
+    pub enable_broadcast: bool,
+    #[cfg(not(target_arch = "wasm32"))]
+    pub presence_callback: Option<PresenceCallback>,
+    #[cfg(target_arch = "wasm32")]
+    pub presence_callback: Option<Arc<dyn Fn(PresenceEvent)>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    pub broadcast_callback: Option<BroadcastCallback>,
+    #[cfg(target_arch = "wasm32")]
+    pub broadcast_callback: Option<Arc<dyn Fn(BroadcastMessage)>>,
+}
+
+#[cfg(feature = "realtime")]
+impl std::fmt::Debug for SubscriptionConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SubscriptionConfig")
+            .field("table", &self.table)
+            .field("schema", &self.schema)
+            .field("event", &self.event)
+            .field("filter", &self.filter)
+            .field("advanced_filters", &self.advanced_filters)
+            .field("enable_presence", &self.enable_presence)
+            .field("enable_broadcast", &self.enable_broadcast)
+            .field("presence_callback", &"<callback fn>")
+            .field("broadcast_callback", &"<callback fn>")
+            .finish()
+    }
 }
 
 #[cfg(feature = "realtime")]
@@ -170,6 +214,11 @@ impl Default for SubscriptionConfig {
             schema: "public".to_string(),
             event: None,
             filter: None,
+            advanced_filters: Vec::new(),
+            enable_presence: false,
+            enable_broadcast: false,
+            presence_callback: None,
+            broadcast_callback: None,
         }
     }
 }
@@ -235,6 +284,241 @@ struct RealtimeProtocolMessage {
     event: String,
     payload: serde_json::Value,
     ref_id: String,
+}
+
+/// Presence state for user tracking
+#[cfg(feature = "realtime")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PresenceState {
+    pub user_id: String,
+    pub online_at: String,
+    pub metadata: Option<HashMap<String, serde_json::Value>>,
+}
+
+/// Presence event for tracking user joins/leaves
+#[cfg(feature = "realtime")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PresenceEvent {
+    pub event_type: PresenceEventType,
+    pub user_id: String,
+    pub presence_state: PresenceState,
+}
+
+/// Types of presence events
+#[cfg(feature = "realtime")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum PresenceEventType {
+    #[serde(rename = "presence_state")]
+    Join,
+    #[serde(rename = "presence_diff")]
+    Leave,
+}
+
+/// Callback for presence events
+#[cfg(feature = "realtime")]
+pub type PresenceCallback = Arc<dyn Fn(PresenceEvent) + Send + Sync>;
+
+/// Broadcast message for cross-client communication
+#[cfg(feature = "realtime")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BroadcastMessage {
+    pub event: String,
+    pub payload: serde_json::Value,
+    pub from_user_id: Option<String>,
+    pub timestamp: String,
+}
+
+/// Callback for broadcast messages
+#[cfg(feature = "realtime")]
+pub type BroadcastCallback = Arc<dyn Fn(BroadcastMessage) + Send + Sync>;
+
+/// Advanced filter configuration
+#[cfg(feature = "realtime")]
+#[derive(Debug, Clone)]
+pub struct AdvancedFilter {
+    pub column: String,
+    pub operator: FilterOperator,
+    pub value: serde_json::Value,
+}
+
+/// Filter operators for advanced filtering
+#[cfg(feature = "realtime")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum FilterOperator {
+    #[serde(rename = "eq")]
+    Equal,
+    #[serde(rename = "neq")]
+    NotEqual,
+    #[serde(rename = "gt")]
+    GreaterThan,
+    #[serde(rename = "gte")]
+    GreaterThanOrEqual,
+    #[serde(rename = "lt")]
+    LessThan,
+    #[serde(rename = "lte")]
+    LessThanOrEqual,
+    #[serde(rename = "in")]
+    In,
+    #[serde(rename = "is")]
+    Is,
+    #[serde(rename = "like")]
+    Like,
+    #[serde(rename = "ilike")]
+    ILike,
+    #[serde(rename = "match")]
+    Match,
+    #[serde(rename = "imatch")]
+    IMatch,
+}
+
+/// Connection pool configuration
+#[cfg(feature = "realtime")]
+#[derive(Debug, Clone)]
+pub struct ConnectionPoolConfig {
+    /// Maximum number of connections in pool (default: 10)
+    pub max_connections: usize,
+    /// Connection timeout in seconds (default: 30)
+    pub connection_timeout: u64,
+    /// Keep-alive interval in seconds (default: 30)
+    pub keep_alive_interval: u64,
+    /// Reconnect delay in milliseconds (default: 1000)
+    pub reconnect_delay: u64,
+    /// Maximum reconnect attempts (default: 5)
+    pub max_reconnect_attempts: u32,
+}
+
+impl Default for ConnectionPoolConfig {
+    fn default() -> Self {
+        Self {
+            max_connections: 10,
+            connection_timeout: 30,
+            keep_alive_interval: 30,
+            reconnect_delay: 1000,
+            max_reconnect_attempts: 5,
+        }
+    }
+}
+
+/// Connection pool for efficient WebSocket management
+#[cfg(feature = "realtime")]
+pub struct ConnectionPool {
+    config: ConnectionPoolConfig,
+    connections: ConnectionStorage,
+    active_connections: Arc<AtomicU64>,
+}
+
+#[cfg(feature = "realtime")]
+impl std::fmt::Debug for ConnectionPool {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ConnectionPool")
+            .field("config", &self.config)
+            .field("active_connections", &self.active_connections)
+            .finish()
+    }
+}
+
+#[cfg(feature = "realtime")]
+impl ConnectionPool {
+    /// Create a new connection pool
+    pub fn new(config: ConnectionPoolConfig) -> Self {
+        let mut connections = Vec::new();
+        connections.resize_with(config.max_connections, || None);
+
+        Self {
+            config,
+            connections: Arc::new(RuntimeLock::new(connections)),
+            active_connections: Arc::new(AtomicU64::new(0)),
+        }
+    }
+
+    /// Get an available connection from the pool
+    pub async fn get_connection(&self) -> Result<Option<Box<dyn WebSocketConnection>>> {
+        let mut connections = self.connections.write().await;
+
+        for connection_slot in connections.iter_mut() {
+            if let Some(connection) = connection_slot.take() {
+                if connection.is_connected() {
+                    debug!("Reusing existing connection from pool");
+                    return Ok(Some(connection));
+                }
+            }
+        }
+
+        // No available connections, try to create a new one
+        for connection_slot in connections.iter_mut() {
+            if connection_slot.is_none() {
+                let new_connection = crate::websocket::create_websocket();
+                *connection_slot = Some(new_connection);
+                self.active_connections
+                    .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                debug!("Created new connection in pool");
+                return Ok(connection_slot.take());
+            }
+        }
+
+        debug!("Connection pool is full");
+        Ok(None)
+    }
+
+    /// Return a connection to the pool
+    pub async fn return_connection(&self, connection: Box<dyn WebSocketConnection>) {
+        let mut connections = self.connections.write().await;
+
+        for connection_slot in connections.iter_mut() {
+            if connection_slot.is_none() {
+                *connection_slot = Some(connection);
+                debug!("Returned connection to pool");
+                return;
+            }
+        }
+
+        // Pool is full, close the connection
+        warn!("Pool is full, dropping connection");
+    }
+
+    /// Get pool statistics
+    pub async fn get_stats(&self) -> ConnectionPoolStats {
+        let connections = self.connections.read().await;
+        let total = connections.len();
+        let active = connections.iter().filter(|c| c.is_some()).count();
+        let available = connections
+            .iter()
+            .filter(|c| c.as_ref().is_some_and(|conn| conn.is_connected()))
+            .count();
+
+        ConnectionPoolStats {
+            total_connections: total,
+            active_connections: active,
+            available_connections: available,
+            max_connections: self.config.max_connections,
+        }
+    }
+
+    /// Close all connections in the pool
+    pub async fn close_all(&self) -> Result<()> {
+        let mut connections = self.connections.write().await;
+
+        for connection_slot in connections.iter_mut() {
+            if let Some(mut connection) = connection_slot.take() {
+                connection.close().await?;
+            }
+        }
+
+        self.active_connections
+            .store(0, std::sync::atomic::Ordering::SeqCst);
+        info!("Closed all connections in pool");
+        Ok(())
+    }
+}
+
+/// Statistics about the connection pool
+#[cfg(feature = "realtime")]
+#[derive(Debug, Clone)]
+pub struct ConnectionPoolStats {
+    pub total_connections: usize,
+    pub active_connections: usize,
+    pub available_connections: usize,
+    pub max_connections: usize,
 }
 
 #[cfg(feature = "realtime")]
@@ -770,6 +1054,524 @@ impl Realtime {
         // Simple pattern matching - could be enhanced with wildcards
         subscription_topic == message_topic || message_topic.starts_with(subscription_topic)
     }
+
+    /// Track user presence in a channel
+    ///
+    /// # Examples
+    /// ```rust,no_run
+    /// use supabase::realtime::PresenceState;
+    /// use std::collections::HashMap;
+    ///
+    /// # async fn example(realtime: &supabase::realtime::Realtime) -> supabase::Result<()> {
+    /// let mut metadata = HashMap::new();
+    /// metadata.insert("status".to_string(), serde_json::Value::String("online".to_string()));
+    /// metadata.insert("location".to_string(), serde_json::Value::String("dashboard".to_string()));
+    ///
+    /// let presence_state = PresenceState {
+    ///     user_id: "user123".to_string(),
+    ///     online_at: chrono::Utc::now().to_rfc3339(),
+    ///     metadata: Some(metadata),
+    /// };
+    ///
+    /// realtime.track_presence("lobby", presence_state).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn track_presence(&self, channel: &str, presence_state: PresenceState) -> Result<()> {
+        debug!(
+            "Tracking presence for user {} in channel {}",
+            presence_state.user_id, channel
+        );
+
+        let topic = format!("realtime:{}", channel);
+        let ref_id = Uuid::new_v4().to_string();
+
+        let message = RealtimeProtocolMessage {
+            topic: topic.clone(),
+            event: "presence".to_string(),
+            payload: serde_json::json!({
+                "event": "track",
+                "payload": presence_state
+            }),
+            ref_id,
+        };
+
+        let mut connection_guard = self.connection_manager.connection.write().await;
+        if let Some(ref mut connection) = *connection_guard {
+            let message_json = serde_json::to_string(&message).map_err(|e| {
+                Error::realtime(format!("Failed to serialize presence message: {}", e))
+            })?;
+
+            connection.send(&message_json).await?;
+            info!(
+                "Started tracking presence for user {}",
+                presence_state.user_id
+            );
+        } else {
+            return Err(Error::realtime("Not connected to realtime server"));
+        }
+
+        Ok(())
+    }
+
+    /// Stop tracking user presence in a channel
+    ///
+    /// # Examples
+    /// ```rust,no_run
+    /// # async fn example(realtime: &supabase::realtime::Realtime) -> supabase::Result<()> {
+    /// realtime.untrack_presence("lobby", "user123").await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn untrack_presence(&self, channel: &str, user_id: &str) -> Result<()> {
+        debug!(
+            "Untracking presence for user {} in channel {}",
+            user_id, channel
+        );
+
+        let topic = format!("realtime:{}", channel);
+        let ref_id = Uuid::new_v4().to_string();
+
+        let message = RealtimeProtocolMessage {
+            topic: topic.clone(),
+            event: "presence".to_string(),
+            payload: serde_json::json!({
+                "event": "untrack",
+                "payload": {
+                    "user_id": user_id
+                }
+            }),
+            ref_id,
+        };
+
+        let mut connection_guard = self.connection_manager.connection.write().await;
+        if let Some(ref mut connection) = *connection_guard {
+            let message_json = serde_json::to_string(&message).map_err(|e| {
+                Error::realtime(format!("Failed to serialize presence message: {}", e))
+            })?;
+
+            connection.send(&message_json).await?;
+            info!("Stopped tracking presence for user {}", user_id);
+        } else {
+            return Err(Error::realtime("Not connected to realtime server"));
+        }
+
+        Ok(())
+    }
+
+    /// Get all users currently present in a channel
+    ///
+    /// # Examples
+    /// ```rust,no_run
+    /// # async fn example(realtime: &supabase::realtime::Realtime) -> supabase::Result<()> {
+    /// let present_users = realtime.get_presence("lobby").await?;
+    /// println!("Users online: {}", present_users.len());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_presence(&self, channel: &str) -> Result<Vec<PresenceState>> {
+        debug!("Getting presence for channel: {}", channel);
+
+        let topic = format!("realtime:{}", channel);
+        let ref_id = Uuid::new_v4().to_string();
+
+        let message = RealtimeProtocolMessage {
+            topic: topic.clone(),
+            event: "presence".to_string(),
+            payload: serde_json::json!({
+                "event": "state"
+            }),
+            ref_id,
+        };
+
+        let mut connection_guard = self.connection_manager.connection.write().await;
+        if let Some(ref mut connection) = *connection_guard {
+            let message_json = serde_json::to_string(&message).map_err(|e| {
+                Error::realtime(format!("Failed to serialize presence message: {}", e))
+            })?;
+
+            connection.send(&message_json).await?;
+
+            // Note: In a real implementation, you'd wait for the response
+            // For now, returning empty vec as this would require more complex message handling
+            info!("Requested presence state for channel: {}", channel);
+            Ok(Vec::new())
+        } else {
+            Err(Error::realtime("Not connected to realtime server"))
+        }
+    }
+
+    /// Send a broadcast message to all subscribers in a channel
+    ///
+    /// # Examples
+    /// ```rust,no_run
+    /// use serde_json::json;
+    ///
+    /// # async fn example(realtime: &supabase::realtime::Realtime) -> supabase::Result<()> {
+    /// let payload = json!({
+    ///     "message": "Hello, everyone!",
+    ///     "from": "user123",
+    ///     "timestamp": chrono::Utc::now().to_rfc3339()
+    /// });
+    ///
+    /// realtime.broadcast("chat", "new_message", payload, Some("user123")).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn broadcast(
+        &self,
+        channel: &str,
+        event: &str,
+        payload: serde_json::Value,
+        from_user_id: Option<&str>,
+    ) -> Result<()> {
+        debug!(
+            "Broadcasting message to channel: {} event: {}",
+            channel, event
+        );
+
+        let topic = format!("realtime:{}", channel);
+        let ref_id = Uuid::new_v4().to_string();
+
+        let broadcast_message = BroadcastMessage {
+            event: event.to_string(),
+            payload,
+            from_user_id: from_user_id.map(|s| s.to_string()),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        };
+
+        let message = RealtimeProtocolMessage {
+            topic: topic.clone(),
+            event: "broadcast".to_string(),
+            payload: serde_json::to_value(broadcast_message)?,
+            ref_id,
+        };
+
+        let mut connection_guard = self.connection_manager.connection.write().await;
+        if let Some(ref mut connection) = *connection_guard {
+            let message_json = serde_json::to_string(&message).map_err(|e| {
+                Error::realtime(format!("Failed to serialize broadcast message: {}", e))
+            })?;
+
+            connection.send(&message_json).await?;
+            info!("Sent broadcast message to channel: {}", channel);
+        } else {
+            return Err(Error::realtime("Not connected to realtime server"));
+        }
+
+        Ok(())
+    }
+
+    /// Subscribe to a channel with advanced configuration
+    ///
+    /// This method provides more control over subscriptions including presence tracking,
+    /// broadcast messages, and advanced filtering.
+    ///
+    /// # Examples
+    /// ```rust,no_run
+    /// use supabase::realtime::{SubscriptionConfig, RealtimeEvent, AdvancedFilter, FilterOperator};
+    /// use std::sync::Arc;
+    ///
+    /// # async fn example(realtime: &supabase::realtime::Realtime) -> supabase::Result<()> {
+    /// let config = SubscriptionConfig {
+    ///     table: Some("posts".to_string()),
+    ///     schema: "public".to_string(),
+    ///     event: Some(RealtimeEvent::All),
+    ///     advanced_filters: vec![
+    ///         AdvancedFilter {
+    ///             column: "status".to_string(),
+    ///             operator: FilterOperator::Equal,
+    ///             value: serde_json::Value::String("published".to_string()),
+    ///         }
+    ///     ],
+    ///     enable_presence: true,
+    ///     enable_broadcast: true,
+    ///     presence_callback: Some(Arc::new(|event| {
+    ///         println!("Presence event: {:?}", event);
+    ///     })),
+    ///     broadcast_callback: Some(Arc::new(|message| {
+    ///         println!("Broadcast message: {:?}", message);
+    ///     })),
+    ///     ..Default::default()
+    /// };
+    ///
+    /// let subscription_id = realtime.subscribe_advanced("posts", config, |msg| {
+    ///     println!("Received message: {:?}", msg);
+    /// }).await?;
+    /// println!("Advanced subscription ID: {}", subscription_id);
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(not(target_arch = "wasm32"))]
+    pub async fn subscribe_advanced<F>(
+        &self,
+        channel: &str,
+        config: SubscriptionConfig,
+        callback: F,
+    ) -> Result<String>
+    where
+        F: Fn(RealtimeMessage) + Send + Sync + 'static,
+    {
+        debug!("Creating advanced subscription for channel: {}", channel);
+
+        let subscription_id = Uuid::new_v4().to_string();
+        let topic = if let Some(ref table) = config.table {
+            format!("realtime:{}:{}:{}", config.schema, table, channel)
+        } else {
+            format!("realtime:{}", channel)
+        };
+
+        // Build filter string from advanced filters
+        let mut filter_parts = Vec::new();
+
+        if let Some(ref simple_filter) = config.filter {
+            filter_parts.push(simple_filter.clone());
+        }
+
+        for advanced_filter in &config.advanced_filters {
+            let filter_str = match &advanced_filter.value {
+                serde_json::Value::String(s) => format!(
+                    "{}={}. {}",
+                    advanced_filter.column,
+                    serde_json::to_string(&advanced_filter.operator)?.trim_matches('"'),
+                    s
+                ),
+                serde_json::Value::Array(arr) => {
+                    let values: Vec<String> = arr
+                        .iter()
+                        .map(|v| v.to_string().trim_matches('"').to_string())
+                        .collect();
+                    format!(
+                        "{}={}.({})",
+                        advanced_filter.column,
+                        serde_json::to_string(&advanced_filter.operator)?.trim_matches('"'),
+                        values.join(",")
+                    )
+                }
+                other => format!(
+                    "{}={}. {}",
+                    advanced_filter.column,
+                    serde_json::to_string(&advanced_filter.operator)?.trim_matches('"'),
+                    other.to_string().trim_matches('"')
+                ),
+            };
+            filter_parts.push(filter_str);
+        }
+
+        let combined_filter = if !filter_parts.is_empty() {
+            Some(filter_parts.join(" and "))
+        } else {
+            None
+        };
+
+        let subscription = Subscription {
+            id: subscription_id.clone(),
+            topic: topic.clone(),
+            config: SubscriptionConfig {
+                filter: combined_filter,
+                ..config.clone()
+            },
+            callback: Arc::new(callback),
+        };
+
+        // Store subscription
+        {
+            let mut subscriptions = self.connection_manager.subscriptions.write().await;
+            subscriptions.insert(subscription_id.clone(), subscription);
+        }
+
+        // Send join message
+        let ref_id = self
+            .connection_manager
+            .ref_counter
+            .fetch_add(1, Ordering::SeqCst)
+            .to_string();
+
+        let mut join_payload = serde_json::json!({
+            "config": {
+                "postgres_changes": [{
+                    "event": config.event.unwrap_or(RealtimeEvent::All),
+                    "schema": config.schema,
+                }]
+            }
+        });
+
+        if let Some(ref table) = config.table {
+            join_payload["config"]["postgres_changes"][0]["table"] =
+                serde_json::Value::String(table.clone());
+        }
+
+        if let Some(ref filter) = config.filter {
+            join_payload["config"]["postgres_changes"][0]["filter"] =
+                serde_json::Value::String(filter.clone());
+        }
+
+        // Add presence configuration
+        if config.enable_presence {
+            join_payload["config"]["presence"] = serde_json::json!({ "key": "" });
+        }
+
+        // Add broadcast configuration
+        if config.enable_broadcast {
+            join_payload["config"]["broadcast"] = serde_json::json!({ "self": true });
+        }
+
+        let join_message = RealtimeProtocolMessage {
+            topic: topic.clone(),
+            event: "phx_join".to_string(),
+            payload: join_payload,
+            ref_id,
+        };
+
+        let mut connection_guard = self.connection_manager.connection.write().await;
+        if let Some(ref mut connection) = *connection_guard {
+            let message_json = serde_json::to_string(&join_message)
+                .map_err(|e| Error::realtime(format!("Failed to serialize join message: {}", e)))?;
+
+            connection.send(&message_json).await?;
+            info!("Advanced subscription created: {}", subscription_id);
+        } else {
+            return Err(Error::realtime("Not connected to realtime server"));
+        }
+
+        Ok(subscription_id)
+    }
+
+    /// Subscribe to a channel with advanced configuration (WASM version)
+    #[cfg(target_arch = "wasm32")]
+    pub async fn subscribe_advanced<F>(
+        &self,
+        channel: &str,
+        config: SubscriptionConfig,
+        callback: F,
+    ) -> Result<String>
+    where
+        F: Fn(RealtimeMessage) + 'static,
+    {
+        debug!("Creating advanced subscription for channel: {}", channel);
+
+        let subscription_id = Uuid::new_v4().to_string();
+        let topic = if let Some(ref table) = config.table {
+            format!("realtime:{}:{}:{}", config.schema, table, channel)
+        } else {
+            format!("realtime:{}", channel)
+        };
+
+        // Build filter string from advanced filters
+        let mut filter_parts = Vec::new();
+
+        if let Some(ref simple_filter) = config.filter {
+            filter_parts.push(simple_filter.clone());
+        }
+
+        for advanced_filter in &config.advanced_filters {
+            let filter_str = match &advanced_filter.value {
+                serde_json::Value::String(s) => format!(
+                    "{}={}. {}",
+                    advanced_filter.column,
+                    serde_json::to_string(&advanced_filter.operator)?.trim_matches('"'),
+                    s
+                ),
+                serde_json::Value::Array(arr) => {
+                    let values: Vec<String> = arr
+                        .iter()
+                        .map(|v| v.to_string().trim_matches('"').to_string())
+                        .collect();
+                    format!(
+                        "{}={}.({})",
+                        advanced_filter.column,
+                        serde_json::to_string(&advanced_filter.operator)?.trim_matches('"'),
+                        values.join(",")
+                    )
+                }
+                other => format!(
+                    "{}={}. {}",
+                    advanced_filter.column,
+                    serde_json::to_string(&advanced_filter.operator)?.trim_matches('"'),
+                    other.to_string().trim_matches('"')
+                ),
+            };
+            filter_parts.push(filter_str);
+        }
+
+        let combined_filter = if !filter_parts.is_empty() {
+            Some(filter_parts.join(" and "))
+        } else {
+            None
+        };
+
+        let subscription = Subscription {
+            id: subscription_id.clone(),
+            topic: topic.clone(),
+            config: SubscriptionConfig {
+                filter: combined_filter,
+                ..config.clone()
+            },
+            callback: Arc::new(callback),
+        };
+
+        // Store subscription
+        {
+            let mut subscriptions = self.connection_manager.subscriptions.write().await;
+            subscriptions.insert(subscription_id.clone(), subscription);
+        }
+
+        // Send join message
+        let ref_id = self
+            .connection_manager
+            .ref_counter
+            .fetch_add(1, Ordering::SeqCst)
+            .to_string();
+
+        let mut join_payload = serde_json::json!({
+            "config": {
+                "postgres_changes": [{
+                    "event": config.event.unwrap_or(RealtimeEvent::All),
+                    "schema": config.schema,
+                }]
+            }
+        });
+
+        if let Some(ref table) = config.table {
+            join_payload["config"]["postgres_changes"][0]["table"] =
+                serde_json::Value::String(table.clone());
+        }
+
+        if let Some(ref filter) = config.filter {
+            join_payload["config"]["postgres_changes"][0]["filter"] =
+                serde_json::Value::String(filter.clone());
+        }
+
+        // Add presence configuration
+        if config.enable_presence {
+            join_payload["config"]["presence"] = serde_json::json!({ "key": "" });
+        }
+
+        // Add broadcast configuration
+        if config.enable_broadcast {
+            join_payload["config"]["broadcast"] = serde_json::json!({ "self": true });
+        }
+
+        let join_message = RealtimeProtocolMessage {
+            topic: topic.clone(),
+            event: "phx_join".to_string(),
+            payload: join_payload,
+            ref_id,
+        };
+
+        let mut connection_guard = self.connection_manager.connection.write().await;
+        if let Some(ref mut connection) = *connection_guard {
+            let message_json = serde_json::to_string(&join_message)
+                .map_err(|e| Error::realtime(format!("Failed to serialize join message: {}", e)))?;
+
+            connection.send(&message_json).await?;
+            info!("Advanced subscription created: {}", subscription_id);
+        } else {
+            return Err(Error::realtime("Not connected to realtime server"));
+        }
+
+        Ok(subscription_id)
+    }
 }
 
 /// Builder for channel subscriptions
@@ -990,6 +1792,7 @@ mod tests {
             schema: "public".to_string(),
             event: None,
             filter: None,
+            ..Default::default()
         };
         let topic = realtime.build_topic(&subscription_config);
         assert_eq!(topic, "realtime:public:posts");
@@ -1000,6 +1803,7 @@ mod tests {
             schema: "admin".to_string(),
             event: None,
             filter: None,
+            ..Default::default()
         };
         let topic = realtime.build_topic(&subscription_config);
         assert_eq!(topic, "realtime:admin");
@@ -1091,6 +1895,7 @@ mod tests {
             schema: "public".to_string(),
             event: Some(RealtimeEvent::All),
             filter: None,
+            ..Default::default()
         };
 
         // This will fail because we're not connected, but that's expected

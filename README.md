@@ -8,31 +8,16 @@
 
 A comprehensive, production-ready Rust client library for [Supabase](https://supabase.com/). This library provides a clean, type-safe, and efficient interface to interact with all Supabase services.
 
-## 🚀 Features
+## ✨ Features
 
-- **🔐 Authentication** - Complete auth system with JWT handling, user management, and session persistence
-  - **🛡️ Multi-Factor Authentication (MFA)** - TOTP and SMS-based 2FA with QR code generation
-  - **🔑 OAuth Providers** - Google, GitHub, Discord, Apple, Twitter, Facebook, Microsoft, LinkedIn
-  - **📱 Phone Authentication** - SMS OTP and international phone number support
-  - **✨ Magic Links** - Passwordless email authentication
-  - **👻 Anonymous Sign-in** - Temporary sessions with account conversion
-  - **🔄 Advanced Token Management** - Smart refresh, metadata, local validation
-- **💾 Session Management** - Advanced session persistence and security
-  - **🔄 Cross-tab Sync** - Real-time session synchronization across browser tabs/windows
-  - **🏪 Platform Storage** - localStorage (WASM), filesystem (Native), encrypted options
-  - **🔒 Session Encryption** - AES-256-GCM encryption with key derivation
-  - **📊 Session Events** - Event-driven session monitoring and lifecycle management
-- **🗄️ Database** - Type-safe PostgREST API client with query builder pattern
-  - **🔗 Advanced Queries** - Logical operators, joins, batch operations, transactions
-  - **📊 Raw SQL Support** - Direct SQL execution with type safety
-- **📁 Storage** - Full-featured file storage with upload, download, and transformation capabilities
-- **⚡ Realtime** - WebSocket subscriptions for live database changes
-- **🛡️ Type Safety** - Comprehensive error handling and type definitions with rich context
-- **🔄 Async/Await** - Full async support with tokio
-- **🌐 WASM Support** - Full WebAssembly compatibility for web applications
-- **🦀 Cross-Platform** - Works on native (desktop/server) and WASM (web) targets
-- **🧪 Well Tested** - Extensive unit and integration test coverage (54+ tests)
-- **📚 Documentation** - Complete API documentation and examples
+- 🔐 **Authentication**: Full auth support including MFA, OAuth, Phone Auth, Magic Links, Anonymous Sign-in, and Advanced Token Management
+- 💾 **Session Management**: Cross-tab Sync, Platform Storage, Session Encryption, Session Events
+- 🗄️ **Database**: Advanced Queries, Raw SQL, and Type-safe PostgREST operations
+- 📁 **Storage**: File operations with Resumable Uploads, Advanced Metadata, Storage Policies, and Real-time Events
+- 📡 **Realtime**: WebSocket subscriptions with Presence System, Broadcast Messages, Advanced Filters, and Connection Pooling
+- ⚡ **Cross-Platform**: Full Native (Tokio) and WebAssembly (WASM) support
+- 🛡️ **Type Safety**: Full Rust type system integration
+- 🔧 **Well Tested**: 65+ comprehensive tests
 
 ## 📦 Installation
 
@@ -40,7 +25,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-supabase-lib-rs = "0.4.0"
+supabase-lib-rs = "0.4.1"
 tokio = { version = "1.0", features = ["full"] }
 ```
 

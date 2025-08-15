@@ -150,7 +150,7 @@ async fn main() -> Result<()> {
     // Example 8: Create signed URL for private access
     println!("\n🔐 Example 8: Create signed URL");
     match storage
-        .create_signed_url(test_bucket_id, file_path, 3600) // 1 hour
+        .create_signed_url(test_bucket_id, file_path, 3600, None) // 1 hour, no transforms
         .await
     {
         Ok(signed_url) => {

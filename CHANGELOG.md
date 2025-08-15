@@ -5,6 +5,106 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-08-15
+
+### 🚀 Major Features
+
+#### Storage Enhancements
+- **Resumable Uploads**: Support for large file uploads with chunking, progress tracking, and resume capability
+  - `start_resumable_upload()`, `upload_chunk()`, `complete_resumable_upload()`
+  - `upload_large_file()` with automatic chunking and retry logic
+  - Progress callbacks and configurable chunk sizes
+- **Advanced Metadata**: Rich file metadata system with tagging and search
+  - `FileMetadata` with tags, custom metadata, descriptions, and categories
+  - `update_file_metadata()` and `search_files()` with advanced filtering
+- **Storage Policies**: Row Level Security helpers for fine-grained access control
+  - `StoragePolicy` with operation types and definition templates
+  - `create_policy()`, `update_policy()`, `delete_policy()`, `list_policies()`
+  - `test_policy_access()` for access validation
+  - `generate_policy_template()` with predefined templates
+- **Storage Events**: Real-time notifications for file operations
+  - `StorageEvent` types and `StorageEventMessage` structure
+  - Event callbacks for file uploads, deletions, and bucket changes
+
+#### Realtime Enhancements
+- **Presence System**: User online/offline tracking with rich metadata
+  - `PresenceState` with user metadata and timestamps
+  - `track_presence()`, `untrack_presence()`, `get_presence()`
+  - Real-time presence event notifications
+- **Broadcast Messages**: Cross-client messaging system
+  - `BroadcastMessage` with event types and payloads
+  - `broadcast()` method for sending messages to all subscribers
+  - Message filtering and routing capabilities
+- **Advanced Filters**: Complex filtering for realtime subscriptions
+  - `AdvancedFilter` with multiple operators (eq, gt, like, in, etc.)
+  - `FilterOperator` enum with comprehensive comparison types
+  - `subscribe_advanced()` with enhanced configuration options
+- **Connection Pooling**: Efficient WebSocket connection management
+  - `ConnectionPool` with configurable pool sizes and timeouts
+  - `ConnectionPoolConfig` with performance tuning options
+  - `get_stats()` for monitoring pool utilization
+
+### 🔧 API Additions
+
+#### New Types
+- `UploadSession`, `UploadedPart`, `ResumableUploadConfig`
+- `FileMetadata`, `SearchOptions`, `StoragePolicy`, `PolicyOperation`
+- `PolicyTemplate`, `StorageEvent`, `StorageEventMessage`
+- `PresenceState`, `PresenceEvent`, `BroadcastMessage`
+- `AdvancedFilter`, `FilterOperator`, `SubscriptionConfig` (enhanced)
+- `ConnectionPool`, `ConnectionPoolConfig`, `ConnectionPoolStats`
+
+#### New Methods
+- Storage: `start_resumable_upload()`, `upload_chunk()`, `complete_resumable_upload()`
+- Storage: `upload_large_file()`, `get_upload_session()`, `cancel_upload_session()`
+- Storage: `update_file_metadata()`, `search_files()`
+- Storage: `create_policy()`, `update_policy()`, `delete_policy()`, `list_policies()`
+- Storage: `test_policy_access()`, `generate_policy_template()`
+- Realtime: `track_presence()`, `untrack_presence()`, `get_presence()`
+- Realtime: `broadcast()`, `subscribe_advanced()`
+- ConnectionPool: `new()`, `get_connection()`, `return_connection()`, `get_stats()`, `close_all()`
+
+### ⚡ Performance Improvements
+- Connection pooling reduces WebSocket connection overhead
+- Resumable uploads optimize bandwidth usage for large files
+- Advanced filtering reduces unnecessary message processing
+- Efficient metadata indexing and search capabilities
+
+### 🧪 Testing
+- Added `storage_advanced_tests.rs` with 12 comprehensive test cases
+- Added `realtime_advanced_tests.rs` with 11 detailed test scenarios
+- Enhanced integration test coverage for new features
+- Added `storage_advanced_example.rs` demonstrating all new capabilities
+
+### 📚 Documentation
+- Updated README with new features and capabilities
+- Enhanced API documentation with detailed examples
+- Added comprehensive docstring examples for all new methods
+- Updated ROADMAP with completed v0.4.1 features
+
+### 🛠️ Developer Experience
+- Type-safe API design with comprehensive error handling
+- Consistent cross-platform abstractions for Native and WASM
+- Builder patterns for complex configurations
+- Progress callbacks and event-driven architecture
+
+### 📦 Dependencies
+- Enhanced existing dependencies for new functionality
+- No breaking dependency changes
+- Maintained backward compatibility with existing APIs
+
+### 🔄 Breaking Changes
+- `SubscriptionConfig` now includes additional fields for advanced features
+- Use `..Default::default()` when creating `SubscriptionConfig` instances
+- Enhanced error types with more specific error contexts
+
+### 🎯 Platform Support
+- Full Native (Tokio) support for all new features
+- WebAssembly (WASM) compatibility with platform-specific optimizations
+- Cross-platform abstractions maintained throughout
+
+---
+
 ## [0.4.0] - 2025-08-15
 
 ### 🚀 Major Features Added

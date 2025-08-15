@@ -1,6 +1,6 @@
 [package]
 name = "supabase-lib-rs"
-version = "0.4.0"
+version = "0.4.1"
 description = "A comprehensive, production-ready Rust client library for Supabase with full cross-platform support (native + WASM)"
 authors = ["Nizovtsev Nikolay <nizovtsevnv@users.noreply.github.com>"]
 license = "MIT"
