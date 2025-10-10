@@ -490,13 +490,11 @@ impl Auth {
         }
 
         let auth_response_body = response.text().await?;
-        let mut auth_response = serde_json::from_str::<AuthResponse>(auth_response_body.as_str())?;
 
-        if auth_response.session.is_none() {
-            auth_response.session = serde_json::from_str::<Session>(auth_response_body.as_str())
-                .inspect_err(|err| warn!("No session: {}", err.to_string()))
-                .ok();
-        }
+        let mut auth_response = serde_json::from_str::<AuthResponse>(auth_response_body.as_str())?;
+        auth_response.session = serde_json::from_str::<Session>(auth_response_body.as_str())
+            .inspect_err(|err| warn!("No session: {}", err.to_string()))
+            .ok();
 
         if let Some(ref session) = auth_response.session {
             self.set_session(session.clone()).await?;
@@ -540,13 +538,11 @@ impl Auth {
         }
 
         let auth_response_body = response.text().await?;
-        let mut auth_response = serde_json::from_str::<AuthResponse>(auth_response_body.as_str())?;
 
-        if auth_response.session.is_none() {
-            auth_response.session = serde_json::from_str::<Session>(auth_response_body.as_str())
-                .inspect_err(|err| warn!("No session: {}", err.to_string()))
-                .ok();
-        }
+        let mut auth_response = serde_json::from_str::<AuthResponse>(auth_response_body.as_str())?;
+        auth_response.session = serde_json::from_str::<Session>(auth_response_body.as_str())
+            .inspect_err(|err| warn!("No session: {}", err.to_string()))
+            .ok();
 
         if let Some(ref session) = auth_response.session {
             self.set_session(session.clone()).await?;
@@ -694,13 +690,11 @@ impl Auth {
         }
 
         let auth_response_body = response.text().await?;
-        let mut auth_response = serde_json::from_str::<AuthResponse>(auth_response_body.as_str())?;
 
-        if auth_response.session.is_none() {
-            auth_response.session = serde_json::from_str::<Session>(auth_response_body.as_str())
-                .inspect_err(|err| warn!("No session: {}", err.to_string()))
-                .ok();
-        }
+        let mut auth_response = serde_json::from_str::<AuthResponse>(auth_response_body.as_str())?;
+        auth_response.session = serde_json::from_str::<Session>(auth_response_body.as_str())
+            .inspect_err(|err| warn!("No session: {}", err.to_string()))
+            .ok();
 
         if let Some(ref session) = auth_response.session {
             self.set_session(session.clone()).await?;
@@ -987,13 +981,11 @@ impl Auth {
         }
 
         let auth_response_body = response.text().await?;
-        let mut auth_response = serde_json::from_str::<AuthResponse>(auth_response_body.as_str())?;
 
-        if auth_response.session.is_none() {
-            auth_response.session = serde_json::from_str::<Session>(auth_response_body.as_str())
-                .inspect_err(|err| warn!("No session: {}", err.to_string()))
-                .ok();
-        }
+        let mut auth_response = serde_json::from_str::<AuthResponse>(auth_response_body.as_str())?;
+        auth_response.session = serde_json::from_str::<Session>(auth_response_body.as_str())
+            .inspect_err(|err| warn!("No session: {}", err.to_string()))
+            .ok();
 
         if let Some(ref session) = auth_response.session {
             self.set_session(session.clone()).await?;
@@ -1760,13 +1752,10 @@ impl Auth {
 
                     let mut auth_response =
                         serde_json::from_str::<AuthResponse>(auth_response_body.as_str())?;
-
-                    if auth_response.session.is_none() {
-                        auth_response.session =
-                            serde_json::from_str::<Session>(auth_response_body.as_str())
-                                .inspect_err(|err| warn!("No session: {}", err.to_string()))
-                                .ok();
-                    }
+                    auth_response.session =
+                        serde_json::from_str::<Session>(auth_response_body.as_str())
+                            .inspect_err(|err| warn!("No session: {}", err.to_string()))
+                            .ok();
 
                     if let Some(new_session) = auth_response.session {
                         self.set_session(new_session.clone()).await?;
