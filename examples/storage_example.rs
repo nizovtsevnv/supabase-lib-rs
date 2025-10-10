@@ -23,7 +23,7 @@ async fn main() -> Result<()> {
 
     // Example 1: List all storage buckets
     println!("\n📋 Example 1: List storage buckets");
-    match storage.list_buckets().await {
+    match storage.list_buckets(None).await {
         Ok(buckets) => {
             println!("✅ Found {} buckets", buckets.len());
             for bucket in buckets.iter().take(3) {
@@ -65,7 +65,7 @@ async fn main() -> Result<()> {
 
     // Example 3: Get bucket information
     println!("\n🔍 Example 3: Get bucket information");
-    match storage.get_bucket(test_bucket_id).await {
+    match storage.get_bucket(test_bucket_id, None).await {
         Ok(bucket) => {
             println!("✅ Retrieved bucket info:");
             println!("   ID: {}", bucket.id);
@@ -91,7 +91,13 @@ async fn main() -> Result<()> {
     };
 
     match storage
-        .upload(test_bucket_id, file_path, file_bytes, Some(upload_options))
+        .upload(
+            test_bucket_id,
+            file_path,
+            file_bytes,
+            Some(upload_options),
+            None,
+        )
         .await
     {
         Ok(response) => {
@@ -107,7 +113,7 @@ async fn main() -> Result<()> {
 
     // Example 5: List files in bucket
     println!("\n📂 Example 5: List files in bucket");
-    match storage.list(test_bucket_id, Some("test/")).await {
+    match storage.list(test_bucket_id, Some("test/"), None).await {
         Ok(files) => {
             println!("✅ Found {} files in test/ folder", files.len());
             for file in files.iter().take(5) {
@@ -237,6 +243,7 @@ async fn main() -> Result<()> {
                 test_bucket_id,
                 "uploads/from_fs.txt",
                 file_content.into(),
+                None,
                 None,
             )
             .await

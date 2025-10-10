@@ -251,7 +251,7 @@ async fn integration_storage_list_buckets() {
     };
     let storage = client.storage();
 
-    match storage.list_buckets().await {
+    match storage.list_buckets(None).await {
         Ok(buckets) => {
             println!("✅ Listed {} buckets", buckets.len());
         }
@@ -405,7 +405,7 @@ async fn e2e_storage_workflow() {
     println!("🧪 Testing storage workflow with bucket: {}", bucket_name);
 
     // 1. List existing buckets
-    match storage.list_buckets().await {
+    match storage.list_buckets(None).await {
         Ok(buckets) => println!("✅ Initial buckets: {}", buckets.len()),
         Err(e) => println!("⚠️ List buckets failed: {}", e),
     }

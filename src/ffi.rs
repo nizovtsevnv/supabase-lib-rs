@@ -365,7 +365,7 @@ pub unsafe extern "C" fn supabase_storage_list_buckets(
 
     let storage_result = client_ref
         .runtime
-        .block_on(async { client_ref.client.storage().list_buckets().await });
+        .block_on(async { client_ref.client.storage().list_buckets(None).await });
 
     match storage_result {
         Ok(buckets) => {

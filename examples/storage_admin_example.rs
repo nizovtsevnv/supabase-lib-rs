@@ -45,7 +45,7 @@ async fn main() -> Result<()> {
 
     // Test bucket listing
     println!("\n📋 Example 2: List all buckets");
-    match storage.list_buckets().await {
+    match storage.list_buckets(None).await {
         Ok(buckets) => {
             println!("✅ Found {} buckets:", buckets.len());
             for bucket in buckets.iter().take(3) {

@@ -213,11 +213,17 @@ impl Storage {
     }
 
     /// List all storage buckets
-    pub async fn list_buckets(&self) -> Result<Vec<Bucket>> {
+    pub async fn list_buckets(&self, session_token: Option<&str>) -> Result<Vec<Bucket>> {
         debug!("Listing all storage buckets");
 
         let url = format!("{}/storage/v1/bucket", self.config.url);
-        let response = self.http_client.get(&url).send().await?;
+        let mut request = self.http_client.get(&url);
+
+        if let Some(token) = session_token {
+            request = request.bearer_auth(token);
+        }
+
+        let response = request.send().await?;
 
         if !response.status().is_success() {
             let status = response.status();
@@ -235,11 +241,17 @@ impl Storage {
     }
 
     /// Get bucket information
-    pub async fn get_bucket(&self, bucket_id: &str) -> Result<Bucket> {
+    pub async fn get_bucket(&self, bucket_id: &str, session_token: Option<&str>) -> Result<Bucket> {
         debug!("Getting bucket info for: {}", bucket_id);
 
         let url = format!("{}/storage/v1/bucket/{}", self.config.url, bucket_id);
-        let response = self.http_client.get(&url).send().await?;
+        let mut request = self.http_client.get(&url);
+
+        if let Some(token) = session_token {
+            request = request.bearer_auth(token);
+        }
+
+        let response = request.send().await?;
 
         if !response.status().is_success() {
             let status = response.status();
@@ -347,7 +359,12 @@ impl Storage {
     }
 
     /// List files in a bucket
-    pub async fn list(&self, bucket_id: &str, path: Option<&str>) -> Result<Vec<FileObject>> {
+    pub async fn list(
+        &self,
+        bucket_id: &str,
+        path: Option<&str>,
+        session_token: Option<&str>,
+    ) -> Result<Vec<FileObject>> {
         debug!("Listing files in bucket: {}", bucket_id);
 
         let url = format!("{}/storage/v1/object/list/{}", self.config.url, bucket_id);
@@ -356,8 +373,13 @@ impl Storage {
             "prefix": path.unwrap_or("")
         });
 
-        let response = self.http_client.post(&url).json(&payload).send().await?;
+        let mut request = self.http_client.post(&url).json(&payload);
 
+        if let Some(token) = session_token {
+            request = request.bearer_auth(token);
+        }
+
+        let response = request.send().await?;
         if !response.status().is_success() {
             let status = response.status();
             let error_msg = match response.text().await {
@@ -381,6 +403,7 @@ impl Storage {
         path: &str,
         file_body: Bytes,
         options: Option<FileOptions>,
+        session_token: Option<&str>,
     ) -> Result<UploadResponse> {
         debug!("Uploading file to bucket: {} at path: {}", bucket_id, path);
 
@@ -408,6 +431,10 @@ impl Storage {
 
         if options.upsert {
             request = request.header("x-upsert", "true");
+        }
+
+        if let Some(token) = session_token {
+            request = request.bearer_auth(token);
         }
 
         let response = request.send().await?;
@@ -488,6 +515,7 @@ impl Storage {
         path: &str,
         file_path: P,
         options: Option<FileOptions>,
+        token: Option<&str>,
     ) -> Result<UploadResponse> {
         debug!("Uploading file from path: {:?}", file_path.as_ref());
 
@@ -495,7 +523,7 @@ impl Storage {
             .await
             .map_err(|e| Error::storage(format!("Failed to read file: {}", e)))?;
 
-        self.upload(bucket_id, path, Bytes::from(file_bytes), options)
+        self.upload(bucket_id, path, Bytes::from(file_bytes), options, token)
             .await
     }
 
@@ -931,13 +959,15 @@ impl Storage {
     ///     "/path/to/large-video.mp4",
     ///     Some(config),
     ///     Some(file_opts),
-    ///     Some(progress_callback)
+    ///     None,
+    ///     Some(progress_callback),
     /// ).await?;
     ///
     /// println!("Upload completed: {}", response.key);
     /// # Ok(())
     /// # }
     /// ```
+    #[allow(clippy::too_many_arguments)]
     #[cfg(all(not(target_arch = "wasm32"), feature = "native"))]
     pub async fn upload_large_file<P: AsRef<std::path::Path>>(
         &self,
@@ -946,6 +976,7 @@ impl Storage {
         file_path: P,
         config: Option<ResumableUploadConfig>,
         options: Option<FileOptions>,
+        token: Option<&str>,
         progress_callback: Option<UploadProgressCallback>,
     ) -> Result<UploadResponse> {
         let config = config.unwrap_or_default();
@@ -961,7 +992,9 @@ impl Storage {
 
         if total_size <= config.chunk_size {
             // Use regular upload for small files
-            return self.upload_file(bucket_id, path, file_path, options).await;
+            return self
+                .upload_file(bucket_id, path, file_path, options, token)
+                .await;
         }
 
         // Start resumable upload session
