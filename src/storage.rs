@@ -363,7 +363,7 @@ impl Storage {
         &self,
         bucket_id: &str,
         path: Option<&str>,
-        session_token: Option<&str>,
+        auth_token: Option<&str>,
     ) -> Result<Vec<FileObject>> {
         debug!("Listing files in bucket: {}", bucket_id);
 
@@ -375,7 +375,7 @@ impl Storage {
 
         let mut request = self.http_client.post(&url).json(&payload);
 
-        if let Some(token) = session_token {
+        if let Some(token) = auth_token {
             request = request.bearer_auth(token);
         }
 
@@ -403,7 +403,7 @@ impl Storage {
         path: &str,
         file_body: Bytes,
         options: Option<FileOptions>,
-        session_token: Option<&str>,
+        auth_token: Option<&str>,
     ) -> Result<UploadResponse> {
         debug!("Uploading file to bucket: {} at path: {}", bucket_id, path);
 
@@ -433,7 +433,7 @@ impl Storage {
             request = request.header("x-upsert", "true");
         }
 
-        if let Some(token) = session_token {
+        if let Some(token) = auth_token {
             request = request.bearer_auth(token);
         }
 
@@ -528,7 +528,12 @@ impl Storage {
     }
 
     /// Download a file
-    pub async fn download(&self, bucket_id: &str, path: &str) -> Result<Bytes> {
+    pub async fn download(
+        &self,
+        bucket_id: &str,
+        path: &str,
+        auth_token: Option<&str>,
+    ) -> Result<Bytes> {
         debug!(
             "Downloading file from bucket: {} at path: {}",
             bucket_id, path
@@ -539,7 +544,13 @@ impl Storage {
             self.config.url, bucket_id, path
         );
 
-        let response = self.http_client.get(&url).send().await?;
+        let mut request = self.http_client.get(&url);
+
+        if let Some(token) = auth_token {
+            request = request.bearer_auth(token);
+        }
+
+        let response = request.send().await?;
 
         if !response.status().is_success() {
             let error_msg = format!("Download failed with status: {}", response.status());

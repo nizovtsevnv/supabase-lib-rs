@@ -129,7 +129,7 @@ async fn main() -> Result<()> {
 
     // Example 6: Download file
     println!("\n⬇️ Example 6: Download file");
-    match storage.download(test_bucket_id, file_path).await {
+    match storage.download(test_bucket_id, file_path, None).await {
         Ok(downloaded_bytes) => {
             println!("✅ File downloaded successfully!");
             println!("   Size: {} bytes", downloaded_bytes.len());
