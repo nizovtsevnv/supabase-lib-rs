@@ -377,6 +377,7 @@ pub struct Session {
     pub access_token: String,
     pub refresh_token: String,
     pub expires_in: i64,
+    #[serde(with = "chrono::serde::ts_seconds")]
     pub expires_at: Timestamp,
     pub token_type: String,
     pub user: User,
@@ -488,7 +489,12 @@ impl Auth {
             return Err(Error::auth(error_msg));
         }
 
-        let auth_response: AuthResponse = response.json().await?;
+        let auth_response_body = response.text().await?;
+
+        let mut auth_response = serde_json::from_str::<AuthResponse>(auth_response_body.as_str())?;
+        auth_response.session = serde_json::from_str::<Session>(auth_response_body.as_str())
+            .inspect_err(|err| warn!("No session: {}", err.to_string()))
+            .ok();
 
         if let Some(ref session) = auth_response.session {
             self.set_session(session.clone()).await?;
@@ -531,7 +537,12 @@ impl Auth {
             return Err(Error::auth(error_msg));
         }
 
-        let auth_response: AuthResponse = response.json().await?;
+        let auth_response_body = response.text().await?;
+
+        let mut auth_response = serde_json::from_str::<AuthResponse>(auth_response_body.as_str())?;
+        auth_response.session = serde_json::from_str::<Session>(auth_response_body.as_str())
+            .inspect_err(|err| warn!("No session: {}", err.to_string()))
+            .ok();
 
         if let Some(ref session) = auth_response.session {
             self.set_session(session.clone()).await?;
@@ -678,7 +689,12 @@ impl Auth {
             return Err(Error::auth(error_msg));
         }
 
-        let auth_response: AuthResponse = response.json().await?;
+        let auth_response_body = response.text().await?;
+
+        let mut auth_response = serde_json::from_str::<AuthResponse>(auth_response_body.as_str())?;
+        auth_response.session = serde_json::from_str::<Session>(auth_response_body.as_str())
+            .inspect_err(|err| warn!("No session: {}", err.to_string()))
+            .ok();
 
         if let Some(ref session) = auth_response.session {
             self.set_session(session.clone()).await?;
@@ -964,7 +980,12 @@ impl Auth {
             return Err(Error::auth(error_msg));
         }
 
-        let auth_response: AuthResponse = response.json().await?;
+        let auth_response_body = response.text().await?;
+
+        let mut auth_response = serde_json::from_str::<AuthResponse>(auth_response_body.as_str())?;
+        auth_response.session = serde_json::from_str::<Session>(auth_response_body.as_str())
+            .inspect_err(|err| warn!("No session: {}", err.to_string()))
+            .ok();
 
         if let Some(ref session) = auth_response.session {
             self.set_session(session.clone()).await?;
@@ -1727,7 +1748,14 @@ impl Auth {
         match response {
             Ok(response) => {
                 if response.status().is_success() {
-                    let auth_response: AuthResponse = response.json().await?;
+                    let auth_response_body = response.text().await?;
+
+                    let mut auth_response =
+                        serde_json::from_str::<AuthResponse>(auth_response_body.as_str())?;
+                    auth_response.session =
+                        serde_json::from_str::<Session>(auth_response_body.as_str())
+                            .inspect_err(|err| warn!("No session: {}", err.to_string()))
+                            .ok();
 
                     if let Some(new_session) = auth_response.session {
                         self.set_session(new_session.clone()).await?;
@@ -1977,6 +2005,113 @@ mod tests {
         // Test cloning
         let cloned_events: Vec<AuthEvent> = events.to_vec();
         assert_eq!(cloned_events, events);
+    }
+
+    #[test]
+    fn test_parsing_auth_from_response() {
+        let json_body = r#"{
+    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IkhxWTFsZ3pmbGhOQUx3NTAiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3Fiamx4cWFyb2l0eHNvdml3bmRsLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIzMTgxNWM1NS1mNTUzLTQxZjQtYjU0Zi0xNGQ2YWM2MGRlMTYiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzYwMDQ1MTk1LCJpYXQiOjE3NjAwNDE1OTUsImVtYWlsIjoic29tZW9uZUBlbWFpbC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsIjoic29tZW9uZUBlbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwicGhvbmVfdmVyaWZpZWQiOmZhbHNlLCJzdWIiOiIzMTgxNWM1NS1mNTUzLTQxZjQtYjU0Zi0xNGQ2YWM2MGRlMTYifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc2MDA0MTU5NX1dLCJzZXNzaW9uX2lkIjoiMzc0OTc0OGUtMmUyMy00Nzk0LTllNmQtNjg0MzU5ZDc3M2RjIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.HCNEZQjnpzBkfEJ_6gJwxcfubRDGez8SRlM6Ni63X_k",
+    "token_type": "bearer",
+    "expires_in": 3600,
+    "expires_at": 1760045195,
+    "refresh_token": "pwou3cigit5u",
+    "user": {
+        "id": "31815c55-f553-41f4-b54f-14d6ac60de16",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "someone@email.com",
+        "email_confirmed_at": "2025-10-09T14:53:09.962028Z",
+        "phone": "",
+        "confirmed_at": "2025-10-09T14:53:09.962028Z",
+        "last_sign_in_at": "2025-10-09T20:26:35.136870325Z",
+        "app_metadata": {
+            "provider": "email",
+            "providers": ["email"]
+        },
+        "user_metadata": {
+            "email": "someone@email.com",
+            "email_verified": true,
+            "phone_verified": false,
+            "sub": "31815c55-f553-41f4-b54f-14d6ac60de16"
+        },
+        "identities": [{
+            "identity_id": "5fe7caa2-1dc3-449b-b910-33bd7df0d616",
+            "id": "31815c55-f553-41f4-b54f-14d6ac60de16",
+            "user_id": "31815c55-f553-41f4-b54f-14d6ac60de16",
+            "identity_data": {
+                "email": "someone@email.com",
+                "email_verified": false,
+                "phone_verified": false,
+                "sub": "31815c55-f553-41f4-b54f-14d6ac60de16"
+            },
+            "provider": "email",
+            "last_sign_in_at": "2025-10-09T14:53:09.958178Z",
+            "created_at": "2025-10-09T14:53:09.958225Z",
+            "updated_at": "2025-10-09T14:53:09.958225Z",
+            "email": "someone@email.com"
+        }],
+        "created_at": "2025-10-09T14:53:09.953727Z",
+        "updated_at": "2025-10-09T20:26:35.13964Z",
+        "is_anonymous": false
+    },
+    "weak_password": null
+}"#;
+        let mut auth = serde_json::from_str::<AuthResponse>(json_body).unwrap();
+        assert!(auth.session.is_none());
+
+        auth.session = serde_json::from_str::<Session>(json_body).ok();
+        assert!(auth.session.is_some());
+    }
+
+    #[test]
+    fn test_parsing_auth_with_missing_session() {
+        let json_body = r#"{
+    "user": {
+        "id": "31815c55-f553-41f4-b54f-14d6ac60de16",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "someone@email.com",
+        "email_confirmed_at": "2025-10-09T14:53:09.962028Z",
+        "phone": "",
+        "confirmed_at": "2025-10-09T14:53:09.962028Z",
+        "last_sign_in_at": "2025-10-09T20:26:35.136870325Z",
+        "app_metadata": {
+            "provider": "email",
+            "providers": ["email"]
+        },
+        "user_metadata": {
+            "email": "someone@email.com",
+            "email_verified": true,
+            "phone_verified": false,
+            "sub": "31815c55-f553-41f4-b54f-14d6ac60de16"
+        },
+        "identities": [{
+            "identity_id": "5fe7caa2-1dc3-449b-b910-33bd7df0d616",
+            "id": "31815c55-f553-41f4-b54f-14d6ac60de16",
+            "user_id": "31815c55-f553-41f4-b54f-14d6ac60de16",
+            "identity_data": {
+                "email": "someone@email.com",
+                "email_verified": false,
+                "phone_verified": false,
+                "sub": "31815c55-f553-41f4-b54f-14d6ac60de16"
+            },
+            "provider": "email",
+            "last_sign_in_at": "2025-10-09T14:53:09.958178Z",
+            "created_at": "2025-10-09T14:53:09.958225Z",
+            "updated_at": "2025-10-09T14:53:09.958225Z",
+            "email": "someone@email.com"
+        }],
+        "created_at": "2025-10-09T14:53:09.953727Z",
+        "updated_at": "2025-10-09T20:26:35.13964Z",
+        "is_anonymous": false
+    },
+    "weak_password": null
+}"#;
+        let mut auth = serde_json::from_str::<AuthResponse>(json_body).unwrap();
+        assert!(auth.session.is_none());
+
+        auth.session = serde_json::from_str::<Session>(json_body).ok();
+        assert!(auth.session.is_none());
     }
 
     #[tokio::test]
