@@ -10,6 +10,7 @@
 
 use serde::{Deserialize, Serialize};
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize)]
 struct Todo {
     id: Option<i32>,
