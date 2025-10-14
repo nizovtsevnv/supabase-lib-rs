@@ -50,7 +50,8 @@ impl MemoryStorage {
 }
 
 #[cfg(feature = "session-management")]
-#[async_trait::async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 impl SessionStorage for MemoryStorage {
     async fn store_session(
         &self,
@@ -124,13 +125,35 @@ impl Default for MemoryStorage {
 }
 
 /// Browser localStorage backend for WASM
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 #[derive(Debug)]
 pub struct LocalStorage {
     key_prefix: String,
 }
 
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+// WASM is single-threaded, so Send and Sync are safe to implement
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
+unsafe impl Send for LocalStorage {}
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
+unsafe impl Sync for LocalStorage {}
+
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 impl LocalStorage {
     pub fn new(key_prefix: Option<String>) -> Result<Self> {
         // Check if localStorage is available
@@ -164,8 +187,12 @@ impl LocalStorage {
     }
 }
 
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
-#[async_trait::async_trait]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
+#[async_trait::async_trait(?Send)]
 impl SessionStorage for LocalStorage {
     async fn store_session(
         &self,
@@ -422,7 +449,8 @@ impl EncryptedStorage {
 }
 
 #[cfg(all(feature = "session-management", feature = "session-encryption"))]
-#[async_trait::async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 impl SessionStorage for EncryptedStorage {
     async fn store_session(
         &self,
@@ -467,7 +495,7 @@ impl SessionStorage for EncryptedStorage {
 #[derive(Debug)]
 pub enum StorageBackend {
     Memory(MemoryStorage),
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(all(target_arch = "wasm32", feature = "wasm"))]
     LocalStorage(LocalStorage),
     #[cfg(not(target_arch = "wasm32"))]
     FileSystem(FileSystemStorage),
@@ -488,7 +516,7 @@ impl StorageBackend {
             StorageBackend::Memory(storage) => {
                 storage.store_session(key, session, expires_at).await
             }
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(all(target_arch = "wasm32", feature = "wasm"))]
             StorageBackend::LocalStorage(storage) => {
                 storage.store_session(key, session, expires_at).await
             }
@@ -507,7 +535,7 @@ impl StorageBackend {
     pub async fn get_session(&self, key: &str) -> Result<Option<SessionData>> {
         match self {
             StorageBackend::Memory(storage) => storage.get_session(key).await,
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(all(target_arch = "wasm32", feature = "wasm"))]
             StorageBackend::LocalStorage(storage) => storage.get_session(key).await,
             #[cfg(not(target_arch = "wasm32"))]
             StorageBackend::FileSystem(storage) => storage.get_session(key).await,
@@ -520,7 +548,7 @@ impl StorageBackend {
     pub async fn remove_session(&self, key: &str) -> Result<()> {
         match self {
             StorageBackend::Memory(storage) => storage.remove_session(key).await,
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(all(target_arch = "wasm32", feature = "wasm"))]
             StorageBackend::LocalStorage(storage) => storage.remove_session(key).await,
             #[cfg(not(target_arch = "wasm32"))]
             StorageBackend::FileSystem(storage) => storage.remove_session(key).await,
@@ -533,7 +561,7 @@ impl StorageBackend {
     pub async fn clear_all_sessions(&self) -> Result<()> {
         match self {
             StorageBackend::Memory(storage) => storage.clear_all_sessions().await,
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(all(target_arch = "wasm32", feature = "wasm"))]
             StorageBackend::LocalStorage(storage) => storage.clear_all_sessions().await,
             #[cfg(not(target_arch = "wasm32"))]
             StorageBackend::FileSystem(storage) => storage.clear_all_sessions().await,
@@ -546,7 +574,7 @@ impl StorageBackend {
     pub async fn list_session_keys(&self) -> Result<Vec<String>> {
         match self {
             StorageBackend::Memory(storage) => storage.list_session_keys().await,
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(all(target_arch = "wasm32", feature = "wasm"))]
             StorageBackend::LocalStorage(storage) => storage.list_session_keys().await,
             #[cfg(not(target_arch = "wasm32"))]
             StorageBackend::FileSystem(storage) => storage.list_session_keys().await,
@@ -559,7 +587,7 @@ impl StorageBackend {
     pub fn is_available(&self) -> bool {
         match self {
             StorageBackend::Memory(storage) => storage.is_available(),
-            #[cfg(target_arch = "wasm32")]
+            #[cfg(all(target_arch = "wasm32", feature = "wasm"))]
             StorageBackend::LocalStorage(storage) => storage.is_available(),
             #[cfg(not(target_arch = "wasm32"))]
             StorageBackend::FileSystem(storage) => storage.is_available(),
@@ -572,7 +600,7 @@ impl StorageBackend {
 /// Factory function to create the appropriate storage backend
 #[cfg(feature = "session-management")]
 pub fn create_default_storage() -> Result<Arc<StorageBackend>> {
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(all(target_arch = "wasm32", feature = "wasm"))]
     {
         if let Ok(storage) = LocalStorage::new(None) {
             Ok(Arc::new(StorageBackend::LocalStorage(storage)))
@@ -580,6 +608,12 @@ pub fn create_default_storage() -> Result<Arc<StorageBackend>> {
             // Fallback to memory storage
             Ok(Arc::new(StorageBackend::Memory(MemoryStorage::new())))
         }
+    }
+
+    #[cfg(all(target_arch = "wasm32", not(feature = "wasm")))]
+    {
+        // Without wasm feature, only memory storage is available
+        Ok(Arc::new(StorageBackend::Memory(MemoryStorage::new())))
     }
 
     #[cfg(not(target_arch = "wasm32"))]

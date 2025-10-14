@@ -631,8 +631,8 @@ fn supabase_lib_rs(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add("Client", py.get_type::<PySupabaseClient>())?;
 
     // Module metadata
-    m.add("__version__", "0.5.1")?;
-    m.add("__author__", "Nizovtsev Nikolay")?;
+    m.add("__version__", "0.5.2")?;
+    m.add("__author__", "Nick Nizovtsev")?;
     m.add(
         "__doc__",
         "Fast and comprehensive Supabase client for Python, powered by Rust",

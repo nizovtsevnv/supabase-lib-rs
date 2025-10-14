@@ -23,7 +23,34 @@ use std::{
 use tokio::sync::RwLock;
 
 #[cfg(target_arch = "wasm32")]
-use crate::async_runtime::RuntimeLock as RwLock;
+mod wasm_rwlock {
+    use std::sync::RwLock as StdRwLock;
+
+    pub struct RwLock<T>(StdRwLock<T>);
+
+    impl<T> RwLock<T> {
+        pub fn new(value: T) -> Self {
+            Self(StdRwLock::new(value))
+        }
+
+        pub async fn read(&self) -> std::sync::RwLockReadGuard<'_, T> {
+            self.0.read().unwrap()
+        }
+
+        pub async fn write(&self) -> std::sync::RwLockWriteGuard<'_, T> {
+            self.0.write().unwrap()
+        }
+    }
+
+    impl<T: std::fmt::Debug> std::fmt::Debug for RwLock<T> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "RwLock")
+        }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+use wasm_rwlock::RwLock;
 
 use tracing::{debug, info};
 
@@ -338,11 +365,25 @@ impl ConnectionPool {
         Ok(client_arc)
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     async fn create_optimized_client(&self) -> Result<HttpClient> {
         let mut builder = HttpClient::builder()
             .pool_max_idle_per_host(self.config.max_connections_per_host)
             .pool_idle_timeout(self.config.idle_timeout)
             .tcp_keepalive(Some(self.config.keep_alive_timeout));
+
+        if let Some(user_agent) = &self.config.user_agent {
+            builder = builder.user_agent(user_agent);
+        }
+
+        builder
+            .build()
+            .map_err(|e| Error::config(format!("Failed to create HTTP client: {}", e)))
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    async fn create_optimized_client(&self) -> Result<HttpClient> {
+        let mut builder = HttpClient::builder();
 
         if let Some(user_agent) = &self.config.user_agent {
             builder = builder.user_agent(user_agent);

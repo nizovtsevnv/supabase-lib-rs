@@ -413,12 +413,21 @@ impl Error {
 
 /// Detect current platform context
 pub fn detect_platform_context() -> PlatformContext {
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(all(target_arch = "wasm32", feature = "wasm"))]
     {
         PlatformContext::Wasm {
             user_agent: web_sys::window().and_then(|window| window.navigator().user_agent().ok()),
             available_apis: detect_available_web_apis(),
             cors_enabled: true, // Assume CORS is enabled for simplicity
+        }
+    }
+
+    #[cfg(all(target_arch = "wasm32", not(feature = "wasm")))]
+    {
+        PlatformContext::Wasm {
+            user_agent: None,
+            available_apis: Vec::new(),
+            cors_enabled: true,
         }
     }
 
@@ -436,7 +445,7 @@ pub fn detect_platform_context() -> PlatformContext {
 }
 
 /// Detect available Web APIs in WASM environment
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "wasm"))]
 #[allow(dead_code)]
 fn detect_available_web_apis() -> Vec<String> {
     let mut apis = Vec::new();

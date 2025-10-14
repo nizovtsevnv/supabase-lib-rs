@@ -56,6 +56,7 @@ pub struct SessionEncryptor {
 impl SessionEncryptor {
     /// Create a new session encryptor with the given key
     pub fn new(key: [u8; 32]) -> Result<Self> {
+        #[allow(deprecated)]
         let key = Key::<Aes256Gcm>::from_slice(&key);
         let cipher = Aes256Gcm::new(key);
         Ok(Self { cipher })
@@ -92,12 +93,14 @@ impl SessionEncryptor {
 
         // Generate random nonce
         let nonce_bytes = rand::random::<[u8; 12]>();
+        #[allow(deprecated)]
         let nonce = Nonce::from_slice(&nonce_bytes);
 
         // Encrypt the data
+        #[allow(clippy::needless_borrow)]
         let encrypted_data = self
             .cipher
-            .encrypt(nonce, serialized.as_ref())
+            .encrypt(&nonce, serialized.as_ref())
             .map_err(|e| Error::crypto(format!("Failed to encrypt session: {}", e)))?;
 
         // Create encrypted container
@@ -159,10 +162,12 @@ impl SessionEncryptor {
         }
 
         // Decrypt the data
+        #[allow(deprecated)]
         let nonce = Nonce::from_slice(&encrypted_container.nonce);
+        #[allow(clippy::needless_borrow)]
         let decrypted_data = self
             .cipher
-            .decrypt(nonce, encrypted_container.encrypted_data.as_ref())
+            .decrypt(&nonce, encrypted_container.encrypted_data.as_ref())
             .map_err(|e| Error::crypto(format!("Failed to decrypt session: {}", e)))?;
 
         // Deserialize the original session

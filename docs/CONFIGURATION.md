@@ -48,7 +48,7 @@ async fn main() -> Result<()> {
         "https://your-project.supabase.co",
         "your-anon-key"
     )?;
-    
+
     Ok(())
 }
 ```
@@ -106,37 +106,37 @@ let client = Client::new_with_config(config)?;
 
 ### HTTP Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `timeout` | `u64` | `30` | Request timeout in seconds |
-| `connect_timeout` | `u64` | `10` | Connection timeout in seconds |
-| `max_redirects` | `usize` | `5` | Maximum number of redirects |
-| `default_headers` | `HashMap<String, String>` | `{}` | Default headers for all requests |
+| Option            | Type                      | Default | Description                      |
+| ----------------- | ------------------------- | ------- | -------------------------------- |
+| `timeout`         | `u64`                     | `30`    | Request timeout in seconds       |
+| `connect_timeout` | `u64`                     | `10`    | Connection timeout in seconds    |
+| `max_redirects`   | `usize`                   | `5`     | Maximum number of redirects      |
+| `default_headers` | `HashMap<String, String>` | `{}`    | Default headers for all requests |
 
 ### Authentication Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `auto_refresh_token` | `bool` | `true` | Automatically refresh expired tokens |
-| `refresh_threshold` | `u64` | `300` | Refresh token before expiry (seconds) |
-| `persist_session` | `bool` | `true` | Persist session across app restarts |
-| `storage_key` | `String` | `"supabase.auth.token"` | Storage key for session data |
+| Option               | Type     | Default                 | Description                           |
+| -------------------- | -------- | ----------------------- | ------------------------------------- |
+| `auto_refresh_token` | `bool`   | `true`                  | Automatically refresh expired tokens  |
+| `refresh_threshold`  | `u64`    | `300`                   | Refresh token before expiry (seconds) |
+| `persist_session`    | `bool`   | `true`                  | Persist session across app restarts   |
+| `storage_key`        | `String` | `"supabase.auth.token"` | Storage key for session data          |
 
 ### Database Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `schema` | `String` | `"public"` | Default database schema |
-| `max_retries` | `u32` | `3` | Maximum retry attempts for failed requests |
-| `retry_delay` | `u64` | `1000` | Delay between retries (milliseconds) |
+| Option        | Type     | Default    | Description                                |
+| ------------- | -------- | ---------- | ------------------------------------------ |
+| `schema`      | `String` | `"public"` | Default database schema                    |
+| `max_retries` | `u32`    | `3`        | Maximum retry attempts for failed requests |
+| `retry_delay` | `u64`    | `1000`     | Delay between retries (milliseconds)       |
 
-### Storage Configuration  
+### Storage Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `default_bucket` | `Option<String>` | `None` | Default bucket for storage operations |
-| `upload_timeout` | `u64` | `300` | Upload timeout in seconds |
-| `max_file_size` | `usize` | `50MB` | Maximum file size for uploads |
+| Option           | Type             | Default | Description                           |
+| ---------------- | ---------------- | ------- | ------------------------------------- |
+| `default_bucket` | `Option<String>` | `None`  | Default bucket for storage operations |
+| `upload_timeout` | `u64`            | `300`   | Upload timeout in seconds             |
+| `max_file_size`  | `usize`          | `50MB`  | Maximum file size for uploads         |
 
 ## Feature Flags
 
@@ -144,29 +144,31 @@ Control which features are included in your build:
 
 ```toml
 [dependencies]
-supabase-lib-rs = { version = "0.5.1", features = ["auth", "database", "storage"] }
+supabase-lib-rs = { version = "0.5.2", features = ["auth", "database", "storage"] }
 ```
 
 ### Available Features
 
-| Feature | Description | Dependencies |
-|---------|-------------|--------------|
-| `auth` | Authentication module | `jsonwebtoken`, `chrono` |
-| `database` | Database operations | `serde_json` |
-| `storage` | File storage operations | `mime` |
-| `functions` | Edge functions | `serde_json` |
-| `realtime` | Real-time subscriptions | `tokio-tungstenite` |
-| `native` | Native platform support | `tokio` |
-| `wasm` | WebAssembly support | `web-sys`, `wasm-bindgen` |
+| Feature     | Description             | Dependencies              |
+| ----------- | ----------------------- | ------------------------- |
+| `auth`      | Authentication module   | `jsonwebtoken`, `chrono`  |
+| `database`  | Database operations     | `serde_json`              |
+| `storage`   | File storage operations | `mime`                    |
+| `functions` | Edge functions          | `serde_json`              |
+| `realtime`  | Real-time subscriptions | `tokio-tungstenite`       |
+| `native`    | Native platform support | `tokio`                   |
+| `wasm`      | WebAssembly support     | `web-sys`, `wasm-bindgen` |
 
 ### Platform-Specific Features
 
 #### Native Features
+
 - File system access for session storage
 - Full WebSocket support
 - Native HTTP client with connection pooling
 
-#### WASM Features  
+#### WASM Features
+
 - Browser LocalStorage integration
 - Web APIs for WebSocket and HTTP
 - Optimized bundle size
@@ -305,6 +307,7 @@ let prod_config = SupabaseConfig {
 ### Common Issues
 
 #### Connection Timeouts
+
 ```rust
 // Increase timeout for slow networks
 let config = SupabaseConfig {
@@ -318,6 +321,7 @@ let config = SupabaseConfig {
 ```
 
 #### Authentication Issues
+
 ```bash
 # Enable auth debugging
 RUST_LOG=supabase::auth=debug
@@ -328,7 +332,9 @@ echo $SUPABASE_ANON_KEY
 ```
 
 #### CORS Issues (WASM)
+
 Make sure your Supabase project allows your domain:
+
 1. Go to Authentication > Settings
 2. Add your domain to "Site URL"
 3. Add your domain to "Additional Redirect URLs"
@@ -350,4 +356,4 @@ let config = SupabaseConfig {
 - [Architecture Guide](ARCHITECTURE.md)
 - [WebAssembly Guide](WASM_GUIDE.md)
 - [Testing Guide](../TESTING.md)
-- [Contributing Guide](../CONTRIBUTING.md) 
+- [Contributing Guide](../CONTRIBUTING.md)

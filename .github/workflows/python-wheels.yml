@@ -8,7 +8,7 @@ on:
       tag:
         description: "Tag to build"
         required: true
-        default: "v0.5.1"
+        default: "v0.5.2"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -173,5 +173,3 @@ jobs:
         with:
           packages-dir: final-dist/
           verbose: true
-
-

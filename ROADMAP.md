@@ -1,8 +1,9 @@
 # 🗺️ Roadmap for supabase-lib-rs
 
 > **Project Philosophy**: The **best Rust client** for Supabase API.
-> 
+>
 > **Core Principles**:
+>
 > - **Quality over Speed** - Deep, reliable, and maintainable core functionality
 > - **No Overhead** - Zero-cost abstractions, efficient resource usage
 > - **No Anti-patterns** - Best practices, idiomatic Rust code
@@ -120,52 +121,6 @@
 - [x] **Foundation Prepared**: Basic PyO3 infrastructure ready for future development
 - [x] **Quality First**: Prioritizing core Rust client stability over feature velocity
 
-### v0.5.2 - Python Production Ready (Future Release)
-
-**🐍 Complete Python Client** (Moved from v0.5.1)
-
-- [ ] **Core Client**: Production-ready Python wrapper for Supabase client
-- [ ] **Full API Coverage**: Auth, Database, Storage, Functions, Realtime
-- [ ] **Type Safety**: Complete Python type hints and runtime validation
-- [ ] **Async Support**: Proper asyncio integration
-- [ ] **Error Handling**: Python-friendly error types and context
-- [ ] **Documentation**: Complete Python API documentation
-- [ ] **Examples**: Comprehensive Python usage examples
-- [ ] **Testing**: Full Python test suite
-- [ ] **PyPI Package**: Official distribution with wheels for major platforms
-
-### v0.6.0 - Quality & Performance Focus
-
-**🏃‍♂️ Performance Excellence**
-
-- [ ] **Micro-optimizations**: Profile-guided optimizations for hot paths
-- [ ] **Memory Efficiency**: Reduced allocations and optimized data structures
-- [ ] **Connection Management**: Advanced HTTP/WebSocket connection strategies
-- [ ] **Benchmark Suite**: Continuous performance monitoring
-- [ ] **Load Testing**: High-concurrency scenarios validation
-
-**🔒 Security Hardening**
-
-- [ ] **Security Audit**: Professional third-party security review
-- [ ] **Fuzzing**: Automated testing for edge cases and vulnerabilities
-- [ ] **Dependency Audit**: Regular security scanning and updates
-- [ ] **Secure Defaults**: Review and harden all security configurations
-
-### v0.7.0 - Developer Experience Polish
-
-**📚 Documentation Excellence**
-
-- [ ] **Interactive Guide**: Step-by-step tutorials with working examples
-- [ ] **API Reference**: Complete, searchable API documentation
-- [ ] **Migration Guides**: Easy transition from other Supabase clients
-- [ ] **Best Practices**: Comprehensive usage patterns and recommendations
-
-**🛠️ Developer Tools**
-
-- [ ] **Testing Utilities**: Mock Supabase server for unit testing
-- [ ] **Debug Helpers**: Enhanced logging and debugging tools
-- [ ] **Examples Repository**: Real-world usage examples and patterns
-
 ---
 
 ## v1.0 - Production Excellence
@@ -253,4 +208,4 @@
 ---
 
 _Last Updated: August 2025_
-_Version: 0.5.1_
+_Version: 0.5.2_

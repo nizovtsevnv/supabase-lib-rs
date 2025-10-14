@@ -5,31 +5,85 @@
 //! - Storage events for localStorage synchronization
 //! - Browser-specific device/client detection
 
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 use crate::error::{Error, Result};
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 use crate::session::{CrossTabChannel, CrossTabMessage};
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 use gloo_timers::callback::Timeout;
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 use std::cell::RefCell;
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 use std::rc::Rc;
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 use wasm_bindgen::prelude::*;
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 use wasm_bindgen::JsCast;
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 use web_sys::BroadcastChannel;
 
 /// WASM cross-tab communication channel using BroadcastChannel API
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 pub struct WasmCrossTabChannel {
     channel: BroadcastChannel,
     _message_handler: Rc<RefCell<Option<Closure<dyn FnMut(web_sys::MessageEvent)>>>>,
 }
 
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+// WASM is single-threaded, so Send and Sync are safe to implement
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
+unsafe impl Send for WasmCrossTabChannel {}
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
+unsafe impl Sync for WasmCrossTabChannel {}
+
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 impl WasmCrossTabChannel {
     /// Create a new cross-tab communication channel
     pub fn new() -> Result<Self> {
@@ -54,8 +108,12 @@ impl WasmCrossTabChannel {
     }
 }
 
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
-#[async_trait::async_trait]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
+#[async_trait::async_trait(?Send)]
 impl CrossTabChannel for WasmCrossTabChannel {
     async fn send_message(&self, message: CrossTabMessage) -> Result<()> {
         let serialized = serde_json::to_string(&message).map_err(|e| {
@@ -75,7 +133,7 @@ impl CrossTabChannel for WasmCrossTabChannel {
         let closure = Closure::wrap(Box::new({
             let callback = callback.clone();
             move |event: web_sys::MessageEvent| {
-                if let Ok(data) = event.data().as_string() {
+                if let Some(data) = event.data().as_string() {
                     if let Ok(message) = serde_json::from_str::<CrossTabMessage>(&data) {
                         callback(message);
                     }
@@ -97,10 +155,18 @@ impl CrossTabChannel for WasmCrossTabChannel {
 }
 
 /// WASM utilities for device and client detection
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 pub struct WasmDeviceDetector;
 
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 impl WasmDeviceDetector {
     /// Get browser information
     pub fn get_browser_info() -> Option<BrowserInfo> {
@@ -117,8 +183,8 @@ impl WasmDeviceDetector {
                 .filter_map(|v| v.as_string())
                 .collect(),
             online: navigator.on_line(),
-            cookie_enabled: navigator.cookie_enabled(),
-            do_not_track: navigator.do_not_track(),
+            cookie_enabled: true, // Assume cookies are enabled in WASM context
+            do_not_track: Some(navigator.do_not_track()),
         })
     }
 
@@ -126,7 +192,6 @@ impl WasmDeviceDetector {
     pub fn generate_client_id() -> Option<String> {
         let window = web_sys::window()?;
         let navigator = window.navigator();
-        let screen = window.screen().ok()?;
 
         // Create a fingerprint based on available characteristics
         let mut fingerprint_data = Vec::new();
@@ -143,20 +208,15 @@ impl WasmDeviceDetector {
             fingerprint_data.push(language);
         }
 
-        if let Ok(width) = screen.width() {
-            fingerprint_data.push(width.to_string());
-        }
-
-        if let Ok(height) = screen.height() {
-            fingerprint_data.push(height.to_string());
-        }
-
-        if let Ok(color_depth) = screen.color_depth() {
-            fingerprint_data.push(color_depth.to_string());
-        }
-
-        if let Ok(pixel_depth) = screen.pixel_depth() {
-            fingerprint_data.push(pixel_depth.to_string());
+        // Try to access screen properties via js_sys if needed
+        // Screen API might not be fully supported in all web_sys versions
+        #[cfg(feature = "wasm")]
+        if let Some(screen_width) = js_sys::Reflect::get(&window, &"screen".into())
+            .ok()
+            .and_then(|screen| js_sys::Reflect::get(&screen, &"width".into()).ok())
+            .and_then(|w| w.as_f64())
+        {
+            fingerprint_data.push(screen_width.to_string());
         }
 
         // Create a hash of the fingerprint data
@@ -167,13 +227,24 @@ impl WasmDeviceDetector {
     /// Generate a tab ID
     pub fn generate_tab_id() -> String {
         // Use performance.now() and random values for tab ID
-        let performance = web_sys::window()
-            .and_then(|w| w.performance())
-            .map(|p| p.now())
+        let performance_now = web_sys::window()
+            .and_then(|w| {
+                js_sys::Reflect::get(&w, &"performance".into())
+                    .ok()
+                    .and_then(|perf| {
+                        let now_fn = js_sys::Reflect::get(&perf, &"now".into()).ok()?;
+                        js_sys::Reflect::apply(&now_fn.into(), &perf, &js_sys::Array::new()).ok()
+                    })
+                    .and_then(|v| v.as_f64())
+            })
             .unwrap_or(0.0);
 
         let random = js_sys::Math::random();
-        format!("tab_{}_{}", performance as u64, (random * 1000000.0) as u64)
+        format!(
+            "tab_{}_{}",
+            performance_now as u64,
+            (random * 1000000.0) as u64
+        )
     }
 
     /// Check if storage is available
@@ -186,7 +257,7 @@ impl WasmDeviceDetector {
     /// Get storage quota information
     pub fn get_storage_info() -> Option<StorageInfo> {
         let window = web_sys::window()?;
-        let navigator = window.navigator();
+        let _navigator = window.navigator();
 
         // Note: Storage API is not fully supported in all browsers
         // This is a simplified version
@@ -199,7 +270,11 @@ impl WasmDeviceDetector {
 }
 
 /// Browser information structure
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 #[derive(Debug, Clone)]
 pub struct BrowserInfo {
     pub user_agent: Option<String>,
@@ -212,7 +287,11 @@ pub struct BrowserInfo {
 }
 
 /// Storage information structure
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 #[derive(Debug, Clone)]
 pub struct StorageInfo {
     pub available: bool,
@@ -221,7 +300,11 @@ pub struct StorageInfo {
 }
 
 /// WASM session monitor for tracking browser events
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 pub struct WasmSessionMonitor {
     visibility_handler: Rc<RefCell<Option<Closure<dyn FnMut(web_sys::Event)>>>>,
     focus_handler: Rc<RefCell<Option<Closure<dyn FnMut(web_sys::Event)>>>>,
@@ -229,7 +312,11 @@ pub struct WasmSessionMonitor {
     beforeunload_handler: Rc<RefCell<Option<Closure<dyn FnMut(web_sys::Event)>>>>,
 }
 
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 impl WasmSessionMonitor {
     pub fn new() -> Self {
         Self {
@@ -326,7 +413,11 @@ impl WasmSessionMonitor {
 }
 
 /// Session monitor events
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 #[derive(Debug, Clone)]
 pub enum SessionMonitorEvent {
     TabVisible,
@@ -337,7 +428,11 @@ pub enum SessionMonitorEvent {
 }
 
 /// Simple hash function for fingerprinting
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 fn simple_hash(input: &str) -> u64 {
     let mut hash = 0u64;
     for byte in input.bytes() {
@@ -346,7 +441,11 @@ fn simple_hash(input: &str) -> u64 {
     hash
 }
 
-#[cfg(all(feature = "session-management", target_arch = "wasm32"))]
+#[cfg(all(
+    feature = "session-management",
+    target_arch = "wasm32",
+    feature = "wasm"
+))]
 impl Default for WasmSessionMonitor {
     fn default() -> Self {
         Self::new()

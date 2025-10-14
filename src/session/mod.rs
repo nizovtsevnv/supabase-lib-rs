@@ -45,7 +45,8 @@ use storage::StorageBackend;
 
 /// Session storage backend trait for cross-platform implementation
 #[cfg(feature = "session-management")]
-#[async_trait::async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 pub trait SessionStorage: Send + Sync {
     /// Store a session with optional expiry
     async fn store_session(
@@ -254,7 +255,8 @@ pub type SessionEventCallback = Box<dyn Fn(SessionEvent) + Send + Sync + 'static
 
 /// Cross-tab communication channel
 #[cfg(feature = "session-management")]
-#[async_trait::async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 pub trait CrossTabChannel: Send + Sync {
     /// Send a message to other tabs
     async fn send_message(&self, message: CrossTabMessage) -> Result<()>;
@@ -542,11 +544,18 @@ impl SessionManager {
 
     async fn setup_cross_tab_sync(&self) -> Result<()> {
         // Platform-specific cross-tab channel setup
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(all(target_arch = "wasm32", feature = "wasm"))]
         {
             let channel = crate::session::wasm::WasmCrossTabChannel::new()?;
             let mut cross_tab = self.cross_tab_channel.lock();
             *cross_tab = Some(Box::new(channel));
+            Ok(())
+        }
+
+        #[cfg(all(target_arch = "wasm32", not(feature = "wasm")))]
+        {
+            // Cross-tab sync not available without wasm feature
+            Err(Error::platform("Cross-tab sync requires 'wasm' feature"))
         }
 
         #[cfg(not(target_arch = "wasm32"))]
@@ -554,9 +563,8 @@ impl SessionManager {
             let channel = crate::session::native::NativeCrossTabChannel::new()?;
             let mut cross_tab = self.cross_tab_channel.lock();
             *cross_tab = Some(Box::new(channel));
+            Ok(())
         }
-
-        Ok(())
     }
 
     async fn start_background_tasks(&self) -> Result<()> {
@@ -625,11 +633,11 @@ impl SessionManager {
     }
 
     fn detect_user_agent(&self) -> Option<String> {
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(all(target_arch = "wasm32", feature = "wasm"))]
         {
             web_sys::window().and_then(|w| w.navigator().user_agent().ok())
         }
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(not(all(target_arch = "wasm32", feature = "wasm")))]
         {
             None
         }

@@ -16,13 +16,32 @@ use crate::{
     error::{Error, Result},
     types::SupabaseConfig,
 };
-use reqwest::{Client as HttpClient, Response};
+use reqwest::Client as HttpClient;
+#[cfg(not(target_arch = "wasm32"))]
+use reqwest::Response;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{collections::HashMap, sync::Arc, time::Duration};
 #[cfg(not(target_arch = "wasm32"))]
 use tokio_stream::Stream;
 use tracing::{debug, info, warn};
+
+// Helper for async sleep across platforms
+#[cfg(not(target_arch = "wasm32"))]
+async fn async_sleep(duration: Duration) {
+    tokio::time::sleep(duration).await;
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "wasm"))]
+async fn async_sleep(duration: Duration) {
+    use gloo_timers::future::sleep as gloo_sleep;
+    gloo_sleep(duration).await;
+}
+
+#[cfg(all(target_arch = "wasm32", not(feature = "wasm")))]
+async fn async_sleep(_duration: Duration) {
+    // No-op for wasm32 without wasm feature (retry delays not supported)
+}
 
 /// Edge Functions client for invoking serverless functions
 ///
@@ -520,7 +539,7 @@ impl Functions {
                         let max_delay_ms = retry_config.max_delay.as_millis() as u64;
 
                         let delay_ms = std::cmp::min(calculated_delay_ms, max_delay_ms);
-                        tokio::time::sleep(Duration::from_millis(delay_ms)).await;
+                        async_sleep(Duration::from_millis(delay_ms)).await;
                     }
                 }
                 Err(e) => return Err(e),

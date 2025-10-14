@@ -8,6 +8,11 @@ no-default-features = false
 features = []
 
 [advisories]
+# Ignore paste unmaintained warning - it's a proc-macro helper crate
+# with no security issues, and is a transitive dependency
+ignore = [
+    "RUSTSEC-2024-0436",  # paste - unmaintained
+]
 
 [licenses]
 allow = [
@@ -24,6 +29,7 @@ allow = [
     "Zlib",
     "OpenSSL",
     "CDLA-Permissive-2.0",
+    "NCSA",
 ]
 confidence-threshold = 0.8
 exceptions = [

@@ -4,12 +4,12 @@ build-backend = "maturin"
 
 [project]
 name = "supabase-lib-rs"
-version = "0.5.1"
+version = "0.5.2"
 description = "Fast and comprehensive Supabase client for Python, powered by Rust"
 readme = "python/README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Nizovtsev Nikolay", email = "nizovtsevnv@users.noreply.github.com"}
+    {name = "Nick Nizovtsev", email = "nizovtsevnv@users.noreply.github.com"}
 ]
 keywords = ["supabase", "database", "realtime", "auth", "storage", "functions"]
 classifiers = [

@@ -1,8 +1,8 @@
 [package]
 name = "supabase-lib-rs"
-version = "0.5.1"
+version = "0.5.2"
 description = "A comprehensive, production-ready Rust client library for Supabase with full cross-platform support (native + WASM)"
-authors = ["Nizovtsev Nikolay <nizovtsevnv@users.noreply.github.com>"]
+authors = ["Nick Nizovtsev <nizovtsevnv@users.noreply.github.com>"]
 license = "MIT"
 edition = "2021"
 repository = "https://github.com/nizovtsevnv/supabase-lib-rs"
@@ -67,7 +67,7 @@ anyhow = "1.0"
 
 # Logging
 tracing = "0.1"
-tracing-subscriber = "0.3"
+tracing-subscriber = "0.3.20"
 
 # Utilities
 bytes = "1.5"
@@ -79,7 +79,7 @@ web-sys = { version = "0.3", features = ["Window", "Navigator", "Storage"], opti
 totp-rs = "5.6"
 base32 = "0.5"
 qrcode = "0.14"
-image = "0.25"
+image = "0.25.7"
 # International phone numbers
 phonenumber = "0.3"
 # Enhanced storage and caching
@@ -145,17 +145,17 @@ web-sys = { version = "0.3", features = [
     "console", "WebSocket", "MessageEvent", "CloseEvent", "ErrorEvent",
     "Window", "Navigator", "Storage", "Event", "EventTarget",
     "BroadcastChannel", "StorageEvent", "Document",
-    "Location", "History", "Crypto"
+    "Location", "History", "Crypto", "Screen", "Performance"
 ], optional = true }
 js-sys = { version = "0.3", optional = true }
 
 # WASM-specific session storage
 gloo-storage = { version = "0.3", optional = true }
-gloo-timers = { version = "0.3", optional = true }
+gloo-timers = { version = "0.3", features = ["futures"], optional = true }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
-tracing-subscriber = "0.3"
+tracing-subscriber = "0.3.20"
 dioxus = "0.6"
 dioxus-web = "0.6"
 wasm-bindgen = "0.2"

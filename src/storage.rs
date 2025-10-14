@@ -13,11 +13,35 @@ use reqwest::{multipart, Client as HttpClient};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 
+#[cfg(target_arch = "wasm32")]
+use tracing::{debug, info};
+#[cfg(not(target_arch = "wasm32"))]
 use tracing::{debug, info, warn};
 use url::Url;
 
 // Resumable uploads support
+#[cfg(target_arch = "wasm32")]
+use std::time::Duration;
+#[cfg(not(target_arch = "wasm32"))]
 use tokio::time::{sleep, Duration};
+
+// Helper for async sleep across platforms
+#[cfg(not(target_arch = "wasm32"))]
+async fn async_sleep(duration: Duration) {
+    sleep(duration).await;
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "wasm"))]
+async fn async_sleep(duration: Duration) {
+    use gloo_timers::future::sleep as gloo_sleep;
+    gloo_sleep(duration).await;
+}
+
+#[cfg(all(target_arch = "wasm32", not(feature = "wasm")))]
+#[allow(dead_code)]
+async fn async_sleep(_duration: Duration) {
+    // No-op for wasm32 without wasm feature (resumable uploads not fully supported)
+}
 
 /// Storage client for file operations
 #[derive(Debug, Clone)]
@@ -1016,7 +1040,7 @@ impl Storage {
                             "Upload chunk {} failed (attempt {}), retrying: {}",
                             part_number, attempts, e
                         );
-                        sleep(Duration::from_millis(config.retry_delay)).await;
+                        async_sleep(Duration::from_millis(config.retry_delay)).await;
                         continue;
                     }
                     Err(e) => return Err(e),

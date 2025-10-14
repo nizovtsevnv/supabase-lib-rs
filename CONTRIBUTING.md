@@ -468,9 +468,9 @@ where
 This project uses GitHub Actions for automated publishing:
 
 - **📦 crates.io**: Automatically publishes on GitHub releases
-- **🐍 PyPI**: Cross-platform wheels built on releases  
+- **🐍 PyPI**: Cross-platform wheels built on releases
 - **📚 docs.rs**: Documentation auto-generated from crates.io
-- **🏗️  Cross-platform libraries**: Built for Linux, macOS, Windows (x86_64 + ARM64)
+- **🏗️ Cross-platform libraries**: Built for Linux, macOS, Windows (x86_64 + ARM64)
 
 ### Release Process
 
@@ -485,21 +485,23 @@ This project uses GitHub Actions for automated publishing:
 For manual releases, use the GitHub Actions workflows:
 
 **🦀 Rust (crates.io):**
+
 1. Go to **Actions** → **Manual Publish to crates.io**
 2. Click **Run workflow**
 3. Optionally specify version or run dry-run first
 4. Monitor the workflow for success
 
 **🐍 Python (PyPI):**
+
 1. Go to **Actions** → **Manual Publish to PyPI**
-2. Click **Run workflow**  
+2. Click **Run workflow**
 3. Optionally specify version or run dry-run (TestPyPI)
 4. Monitor the workflow for success
 
 ### Version Management
 
 - Follow semantic versioning: `MAJOR.MINOR.PATCH`
-- Version bumps trigger automatic releases when tagged (`git tag v0.5.1`)
+- Version bumps trigger automatic releases when tagged (`git tag v0.5.2`)
 - Always update `CHANGELOG.md` before releases
 - Test thoroughly on all target platforms
 
