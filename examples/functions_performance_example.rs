@@ -20,6 +20,7 @@ use supabase::functions::{InvokeOptions, LocalConfig, RetryConfig};
 #[cfg(feature = "performance")]
 use supabase::performance::{BatchOperation, CacheConfig, ConnectionPoolConfig};
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize)]
 struct FunctionResult {
     success: bool,
