@@ -20,44 +20,44 @@ jobs:
           # Linux x86_64
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            lib_name: libsupabase.so
-            static_name: libsupabase.a
+            lib_name: libsupabase_lib_rs.so
+            static_name: libsupabase_lib_rs.a
 
           # Linux x86_64 (MUSL - статическая линковка)
           - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
-            lib_name: libsupabase.so
-            static_name: libsupabase.a
+            lib_name: libsupabase_lib_rs.so
+            static_name: libsupabase_lib_rs.a
 
           # Linux ARM64
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-latest
-            lib_name: libsupabase.so
-            static_name: libsupabase.a
+            lib_name: libsupabase_lib_rs.so
+            static_name: libsupabase_lib_rs.a
 
           # macOS x86_64
           - target: x86_64-apple-darwin
             os: macos-latest
-            lib_name: libsupabase.dylib
-            static_name: libsupabase.a
+            lib_name: libsupabase_lib_rs.dylib
+            static_name: libsupabase_lib_rs.a
 
           # macOS ARM64 (Apple Silicon)
           - target: aarch64-apple-darwin
             os: macos-latest
-            lib_name: libsupabase.dylib
-            static_name: libsupabase.a
+            lib_name: libsupabase_lib_rs.dylib
+            static_name: libsupabase_lib_rs.a
 
           # Windows x86_64
           - target: x86_64-pc-windows-msvc
             os: windows-latest
-            lib_name: supabase.dll
-            static_name: supabase.lib
+            lib_name: supabase_lib_rs.dll
+            static_name: supabase_lib_rs.lib
 
           # Windows ARM64
           - target: aarch64-pc-windows-msvc
             os: windows-latest
-            lib_name: supabase.dll
-            static_name: supabase.lib
+            lib_name: supabase_lib_rs.dll
+            static_name: supabase_lib_rs.lib
 
     steps:
       - name: Checkout
