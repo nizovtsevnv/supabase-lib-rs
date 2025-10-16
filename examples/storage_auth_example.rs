@@ -10,11 +10,11 @@
 
 use bytes::Bytes;
 use std::env;
-use supabase::prelude::*;
+use supabase_lib_rs::prelude::*;
 
 #[allow(clippy::result_large_err)]
 #[tokio::main]
-async fn main() -> supabase::Result<()> {
+async fn main() -> supabase_lib_rs::Result<()> {
     // Initialize tracing subscriber for logging
     tracing_subscriber::fmt::init();
 
@@ -37,11 +37,11 @@ async fn main() -> supabase::Result<()> {
 
     let session = auth_response
         .session
-        .ok_or_else(|| supabase::Error::auth("No session returned".to_string()))?;
+        .ok_or_else(|| supabase_lib_rs::Error::auth("No session returned".to_string()))?;
 
     let user = auth_response
         .user
-        .ok_or_else(|| supabase::Error::auth("No user returned".to_string()))?;
+        .ok_or_else(|| supabase_lib_rs::Error::auth("No user returned".to_string()))?;
 
     let user_token = session.access_token.clone();
     let user_id = user.id;

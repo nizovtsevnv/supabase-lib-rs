@@ -1,6 +1,6 @@
 //! Integration tests for authentication module
 
-use supabase::prelude::*;
+use supabase_lib_rs::prelude::*;
 
 mod common;
 use common::*;

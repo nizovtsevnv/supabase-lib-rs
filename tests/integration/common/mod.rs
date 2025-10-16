@@ -1,6 +1,6 @@
 //! Common test utilities and setup
 
-use supabase::{Client, types::*};
+use supabase_lib_rs::{Client, types::*};
 use std::env;
 
 /// Test configuration for integration tests

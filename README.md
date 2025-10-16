@@ -24,7 +24,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-supabase-lib-rs = "0.5.3"
+supabase-lib-rs = "0.5.4"
 tokio = { version = "1.0", features = ["full"] }
 ```
 

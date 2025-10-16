@@ -11,8 +11,8 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     {
         use chrono::Utc;
 
-        use supabase::prelude::*;
-        use supabase::session::{
+        use supabase_lib_rs::prelude::*;
+        use supabase_lib_rs::session::{
             storage::create_default_storage, SessionEvent, SessionManager, SessionManagerConfig,
         };
         use uuid::Uuid;
@@ -74,7 +74,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
         // Create a mock session for demonstration
         println!("\n🔐 Creating Demo Session...");
-        let demo_user = supabase::auth::User {
+        let demo_user = supabase_lib_rs::auth::User {
             id: Uuid::new_v4(),
             email: Some("demo@example.com".to_string()),
             phone: None,
@@ -89,7 +89,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             role: Some("authenticated".to_string()),
         };
 
-        let demo_session = supabase::auth::Session {
+        let demo_session = supabase_lib_rs::auth::Session {
             access_token: "demo_access_token_12345".to_string(),
             refresh_token: "demo_refresh_token_67890".to_string(),
             expires_in: 3600,

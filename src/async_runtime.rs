@@ -12,7 +12,7 @@
 //! ## Usage
 //!
 //! ```rust,ignore
-//! use supabase::async_runtime::RuntimeLock;
+//! use supabase_lib_rs::async_runtime::RuntimeLock;
 //! use std::collections::HashMap;
 //!
 //! # async fn example() {
@@ -58,7 +58,7 @@ pub trait AsyncLock<T>: Send + Sync {
     ///
     /// # Examples
     /// ```rust,ignore
-    /// # use supabase::async_runtime::{AsyncLock, TokioRwLock};
+    /// # use supabase_lib_rs::async_runtime::{AsyncLock, TokioRwLock};
     /// # async fn example() {
     /// let lock = TokioRwLock::new(42);
     /// let guard = lock.read().await;
@@ -71,7 +71,7 @@ pub trait AsyncLock<T>: Send + Sync {
     ///
     /// # Examples
     /// ```rust,ignore
-    /// # use supabase::async_runtime::{AsyncLock, TokioRwLock};
+    /// # use supabase_lib_rs::async_runtime::{AsyncLock, TokioRwLock};
     /// # async fn example() {
     /// let lock = TokioRwLock::new(42);
     /// let mut guard = lock.write().await;
@@ -122,7 +122,7 @@ pub trait AsyncLock<T> {
 /// ## Examples
 ///
 /// ```rust,ignore
-/// use supabase::async_runtime::{TokioRwLock, AsyncLock};
+/// use supabase_lib_rs::async_runtime::{TokioRwLock, AsyncLock};
 /// use std::collections::HashMap;
 ///
 /// # async fn example() {
@@ -150,7 +150,7 @@ impl<T> TokioRwLock<T> {
     ///
     /// # Examples
     /// ```rust,ignore
-    /// use supabase::async_runtime::TokioRwLock;
+    /// use supabase_lib_rs::async_runtime::TokioRwLock;
     /// use std::collections::HashMap;
     ///
     /// let lock = TokioRwLock::new(HashMap::<String, i32>::new());
@@ -199,7 +199,7 @@ impl<T: Send + Sync> AsyncLock<T> for TokioRwLock<T> {
 /// ```rust,ignore
 /// # #[cfg(target_arch = "wasm32")]
 /// # async fn example() {
-/// use supabase::async_runtime::{WasmRwLock, AsyncLock};
+/// use supabase_lib_rs::async_runtime::{WasmRwLock, AsyncLock};
 /// use std::collections::HashMap;
 ///
 /// let shared_data = WasmRwLock::new(HashMap::<String, i32>::new());
@@ -230,7 +230,7 @@ impl<T> WasmRwLock<T> {
     /// ```rust,ignore
     /// # #[cfg(target_arch = "wasm32")]
     /// # {
-    /// use supabase::async_runtime::WasmRwLock;
+    /// use supabase_lib_rs::async_runtime::WasmRwLock;
     /// use std::collections::HashMap;
     ///
     /// let lock = WasmRwLock::new(HashMap::<String, i32>::new());
@@ -304,7 +304,7 @@ impl<T> AsyncLock<T> for WasmRwLock<T> {
 /// ## Examples
 ///
 /// ```rust,ignore
-/// use supabase::async_runtime::RuntimeLock;
+/// use supabase_lib_rs::async_runtime::RuntimeLock;
 /// use std::collections::HashMap;
 ///
 /// # async fn example() {

@@ -144,7 +144,7 @@ Control which features are included in your build:
 
 ```toml
 [dependencies]
-supabase-lib-rs = { version = "0.5.3", features = ["auth", "database", "storage"] }
+supabase-lib-rs = { version = "0.5.4", features = ["auth", "database", "storage"] }
 ```
 
 ### Available Features

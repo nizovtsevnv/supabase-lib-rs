@@ -14,7 +14,7 @@
 //! used directly if needed:
 //!
 //! ```rust,ignore
-//! use supabase::websocket::{create_websocket, WebSocketConnection};
+//! use supabase_lib_rs::websocket::{create_websocket, WebSocketConnection};
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! let mut ws = create_websocket();
@@ -47,8 +47,8 @@ pub trait WebSocketConnection: Send + Sync {
     ///
     /// # Examples
     /// ```rust,ignore
-    /// # use supabase::websocket::{create_websocket, WebSocketConnection};
-    /// # async fn example() -> supabase::Result<()> {
+    /// # use supabase_lib_rs::websocket::{create_websocket, WebSocketConnection};
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let mut ws = create_websocket();
     /// ws.connect("wss://echo.websocket.org").await?;
     /// # Ok(())
@@ -60,8 +60,8 @@ pub trait WebSocketConnection: Send + Sync {
     ///
     /// # Examples
     /// ```rust,ignore
-    /// # use supabase::websocket::{create_websocket, WebSocketConnection};
-    /// # async fn example() -> supabase::Result<()> {
+    /// # use supabase_lib_rs::websocket::{create_websocket, WebSocketConnection};
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let mut ws = create_websocket();
     /// ws.connect("wss://echo.websocket.org").await?;
     /// ws.send("Hello, server!").await?;
@@ -77,8 +77,8 @@ pub trait WebSocketConnection: Send + Sync {
     ///
     /// # Examples
     /// ```rust,ignore
-    /// # use supabase::websocket::{create_websocket, WebSocketConnection};
-    /// # async fn example() -> supabase::Result<()> {
+    /// # use supabase_lib_rs::websocket::{create_websocket, WebSocketConnection};
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let mut ws = create_websocket();
     /// ws.connect("wss://echo.websocket.org").await?;
     ///
@@ -94,8 +94,8 @@ pub trait WebSocketConnection: Send + Sync {
     ///
     /// # Examples
     /// ```rust,ignore
-    /// # use supabase::websocket::{create_websocket, WebSocketConnection};
-    /// # async fn example() -> supabase::Result<()> {
+    /// # use supabase_lib_rs::websocket::{create_websocket, WebSocketConnection};
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let mut ws = create_websocket();
     /// ws.connect("wss://echo.websocket.org").await?;
     /// // ... do work ...
@@ -109,8 +109,8 @@ pub trait WebSocketConnection: Send + Sync {
     ///
     /// # Examples
     /// ```rust,ignore
-    /// # use supabase::websocket::{create_websocket, WebSocketConnection};
-    /// # async fn example() -> supabase::Result<()> {
+    /// # use supabase_lib_rs::websocket::{create_websocket, WebSocketConnection};
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let mut ws = create_websocket();
     /// assert!(!ws.is_connected()); // Not connected initially
     ///
@@ -156,10 +156,10 @@ pub trait WebSocketConnection {
 /// ## Example
 ///
 /// ```rust,ignore
-/// use supabase::websocket::NativeWebSocket;
-/// use supabase::websocket::WebSocketConnection;
+/// use supabase_lib_rs::websocket::NativeWebSocket;
+/// use supabase_lib_rs::websocket::WebSocketConnection;
 ///
-/// # async fn example() -> supabase::Result<()> {
+/// # async fn example() -> supabase_lib_rs::Result<()> {
 /// let mut ws = NativeWebSocket::new();
 /// ws.connect("wss://echo.websocket.org").await?;
 ///
@@ -188,7 +188,7 @@ impl NativeWebSocket {
     ///
     /// # Examples
     /// ```rust,ignore
-    /// use supabase::websocket::NativeWebSocket;
+    /// use supabase_lib_rs::websocket::NativeWebSocket;
     ///
     /// let websocket = NativeWebSocket::new();
     /// ```
@@ -301,8 +301,8 @@ impl WebSocketConnection for NativeWebSocket {
 ///
 /// ```rust,ignore
 /// # #[cfg(target_arch = "wasm32")]
-/// # async fn example() -> supabase::Result<()> {
-/// use supabase::websocket::{WasmWebSocket, WebSocketConnection};
+/// # async fn example() -> supabase_lib_rs::Result<()> {
+/// use supabase_lib_rs::websocket::{WasmWebSocket, WebSocketConnection};
 ///
 /// let mut ws = WasmWebSocket::new();
 /// ws.connect("wss://echo.websocket.org").await?;
@@ -331,7 +331,7 @@ impl WasmWebSocket {
     /// ```rust,ignore
     /// # #[cfg(target_arch = "wasm32")]
     /// # {
-    /// use supabase::websocket::WasmWebSocket;
+    /// use supabase_lib_rs::websocket::WasmWebSocket;
     ///
     /// let websocket = WasmWebSocket::new();
     /// # }
@@ -500,9 +500,9 @@ impl WebSocketConnection for WasmWebSocket {
 /// # Examples
 ///
 /// ```rust,ignore
-/// use supabase::websocket::{create_websocket, WebSocketConnection};
+/// use supabase_lib_rs::websocket::{create_websocket, WebSocketConnection};
 ///
-/// # async fn example() -> supabase::Result<()> {
+/// # async fn example() -> supabase_lib_rs::Result<()> {
 /// // Automatically creates the right WebSocket for your platform
 /// let mut ws = create_websocket();
 /// ws.connect("wss://echo.websocket.org").await?;

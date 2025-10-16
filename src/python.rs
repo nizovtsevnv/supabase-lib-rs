@@ -631,7 +631,7 @@ fn supabase_lib_rs(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add("Client", py.get_type::<PySupabaseClient>())?;
 
     // Module metadata
-    m.add("__version__", "0.5.3")?;
+    m.add("__version__", "0.5.4")?;
     m.add("__author__", "Nick Nizovtsev")?;
     m.add(
         "__doc__",

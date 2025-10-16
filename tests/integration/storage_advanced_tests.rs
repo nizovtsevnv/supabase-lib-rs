@@ -3,7 +3,7 @@
 //! Tests for resumable uploads, advanced metadata, and storage policies
 
 use std::{collections::HashMap, sync::Arc};
-use supabase::{
+use supabase_lib_rs::{
     storage::{
         FileMetadata, ResumableUploadConfig, SearchOptions, StoragePolicy,
         PolicyOperation, PolicyTemplate

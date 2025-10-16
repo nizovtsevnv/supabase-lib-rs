@@ -161,7 +161,7 @@ impl Database {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use serde_json::{json, Value};
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("http://localhost:54321", "test-key").unwrap();
@@ -190,7 +190,7 @@ impl Database {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use serde_json::{json, Value};
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("http://localhost:54321", "test-key").unwrap();
@@ -245,7 +245,7 @@ impl Database {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use serde_json::{json, Value};
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("http://localhost:54321", "test-key").unwrap();
@@ -302,7 +302,7 @@ impl Database {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use serde_json::{json, Value};
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("http://localhost:54321", "test-key").unwrap();
@@ -352,7 +352,7 @@ impl Database {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use serde_json::{json, Value};
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("http://localhost:54321", "test-key").unwrap();
@@ -400,7 +400,7 @@ impl Database {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use serde_json::json;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("http://localhost:54321", "test-key").unwrap();
@@ -437,7 +437,7 @@ impl Database {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use serde_json::{json, Value};
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("http://localhost:54321", "test-key").unwrap();
@@ -499,7 +499,7 @@ impl Database {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use serde_json::{json, Value};
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("http://localhost:54321", "test-key").unwrap();
@@ -896,7 +896,7 @@ impl QueryBuilder {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use serde_json::Value;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("http://localhost:54321", "test-key").unwrap();
@@ -937,7 +937,7 @@ impl QueryBuilder {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use serde_json::Value;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("http://localhost:54321", "test-key").unwrap();
@@ -977,7 +977,7 @@ impl QueryBuilder {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use serde_json::Value;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("http://localhost:54321", "test-key").unwrap();
@@ -1021,7 +1021,7 @@ impl QueryBuilder {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use serde_json::Value;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("http://localhost:54321", "test-key").unwrap();
@@ -1052,7 +1052,7 @@ impl QueryBuilder {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use serde_json::Value;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("http://localhost:54321", "test-key").unwrap();
@@ -1083,7 +1083,7 @@ impl QueryBuilder {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use serde_json::Value;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("http://localhost:54321", "test-key").unwrap();
@@ -1119,7 +1119,7 @@ impl QueryBuilder {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use serde_json::Value;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("http://localhost:54321", "test-key").unwrap();

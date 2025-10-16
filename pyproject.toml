@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "supabase-lib-rs"
-version = "0.5.3"
+version = "0.5.4"
 description = "Fast and comprehensive Supabase client for Python, powered by Rust"
 readme = "python/README.md"
 license = {text = "MIT"}

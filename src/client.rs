@@ -63,7 +63,7 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use supabase::Client;
+    /// use supabase_lib_rs::Client;
     ///
     /// let client = Client::new("https://your-project.supabase.co", "your-anon-key")?;
     /// # Ok::<(), Box<dyn std::error::Error>>(())
@@ -93,7 +93,7 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use supabase::Client;
+    /// use supabase_lib_rs::Client;
     ///
     /// let client = Client::new_with_service_role(
     ///     "https://your-project.supabase.co",
@@ -129,7 +129,7 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use supabase::{Client, types::*};
+    /// use supabase_lib_rs::{Client, types::*};
     ///
     /// let config = SupabaseConfig {
     ///     url: "https://your-project.supabase.co".to_string(),

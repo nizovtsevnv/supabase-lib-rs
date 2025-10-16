@@ -50,10 +50,10 @@ async fn async_sleep(_duration: Duration) {
 /// Basic function invocation:
 ///
 /// ```rust,no_run
-/// use supabase::Client;
+/// use supabase_lib_rs::Client;
 /// use serde_json::json;
 ///
-/// # async fn example() -> supabase::Result<()> {
+/// # async fn example() -> supabase_lib_rs::Result<()> {
 /// let client = Client::new("your-project-url", "your-anon-key")?;
 ///
 /// // Invoke a function with parameters
@@ -69,11 +69,11 @@ async fn async_sleep(_duration: Duration) {
 /// Streaming function responses:
 ///
 /// ```rust,no_run
-/// use supabase::Client;
+/// use supabase_lib_rs::Client;
 /// use serde_json::json;
 /// use tokio_stream::StreamExt;
 ///
-/// # async fn example() -> supabase::Result<()> {
+/// # async fn example() -> supabase_lib_rs::Result<()> {
 /// let client = Client::new("your-project-url", "your-anon-key")?;
 ///
 /// // Stream function responses
@@ -217,7 +217,7 @@ impl Functions {
     /// ```rust,no_run
     /// use serde_json::json;
     ///
-    /// # async fn example(functions: &supabase::Functions) -> supabase::Result<()> {
+    /// # async fn example(functions: &supabase_lib_rs::Functions) -> supabase_lib_rs::Result<()> {
     /// // Simple function call
     /// let result = functions.invoke("hello", None).await?;
     ///
@@ -244,11 +244,11 @@ impl Functions {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use supabase::Client;
+    /// use supabase_lib_rs::Client;
     /// use serde_json::json;
     /// use std::collections::HashMap;
     ///
-    /// # async fn example() -> supabase::Result<()> {
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let client = Client::new("your-project-url", "your-anon-key")?;
     ///
     /// let mut headers = HashMap::new();
@@ -332,7 +332,7 @@ impl Functions {
     /// use serde_json::json;
     /// use tokio_stream::StreamExt;
     ///
-    /// # async fn example(functions: &supabase::Functions) -> supabase::Result<()> {
+    /// # async fn example(functions: &supabase_lib_rs::Functions) -> supabase_lib_rs::Result<()> {
     /// let mut stream = functions.invoke_stream("streaming-function", Some(json!({
     ///     "mode": "realtime",
     ///     "duration": 60
@@ -398,7 +398,7 @@ impl Functions {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # async fn example(functions: &supabase::Functions) -> supabase::Result<()> {
+    /// # async fn example(functions: &supabase_lib_rs::Functions) -> supabase_lib_rs::Result<()> {
     /// let metadata = functions.get_function_metadata("my-function").await?;
     /// println!("Function: {}", metadata.name);
     /// println!("Status: {:?}", metadata.status);
@@ -440,7 +440,7 @@ impl Functions {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # async fn example(functions: &supabase::Functions) -> supabase::Result<()> {
+    /// # async fn example(functions: &supabase_lib_rs::Functions) -> supabase_lib_rs::Result<()> {
     /// let functions_list = functions.list_functions().await?;
     /// for func in functions_list {
     ///     println!("Function: {} - Status: {:?}", func.name, func.status);
@@ -486,11 +486,11 @@ impl Functions {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use supabase::functions::{InvokeOptions, RetryConfig};
+    /// use supabase_lib_rs::functions::{InvokeOptions, RetryConfig};
     /// use serde_json::json;
     /// use std::{collections::HashMap, time::Duration};
     ///
-    /// # async fn example(functions: &supabase::Functions) -> supabase::Result<()> {
+    /// # async fn example(functions: &supabase_lib_rs::Functions) -> supabase_lib_rs::Result<()> {
     /// let mut headers = HashMap::new();
     /// headers.insert("X-Priority".to_string(), "high".to_string());
     ///
@@ -558,10 +558,10 @@ impl Functions {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use supabase::functions::LocalConfig;
+    /// use supabase_lib_rs::functions::LocalConfig;
     /// use serde_json::json;
     ///
-    /// # async fn example(functions: &supabase::Functions) -> supabase::Result<()> {
+    /// # async fn example(functions: &supabase_lib_rs::Functions) -> supabase_lib_rs::Result<()> {
     /// let local_config = LocalConfig {
     ///     local_url: "http://localhost:54321".to_string(),
     ///     functions_dir: Some("./functions".to_string()),

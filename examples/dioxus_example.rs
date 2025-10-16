@@ -36,12 +36,12 @@ struct SupabaseService {
 
 #[cfg(target_arch = "wasm32")]
 impl SupabaseService {
-    fn new(url: &str, key: &str) -> supabase::Result<Self> {
-        let client = supabase::Client::new(url, key)?;
+    fn new(url: &str, key: &str) -> supabase_lib_rs::Result<Self> {
+        let client = supabase_lib_rs::Client::new(url, key)?;
         Ok(Self { client })
     }
 
-    async fn sign_in(&self, email: &str, password: &str) -> supabase::Result<()> {
+    async fn sign_in(&self, email: &str, password: &str) -> supabase_lib_rs::Result<()> {
         self.client
             .auth()
             .sign_in_with_email_and_password(email, password)
@@ -49,11 +49,11 @@ impl SupabaseService {
         Ok(())
     }
 
-    async fn sign_out(&self) -> supabase::Result<()> {
+    async fn sign_out(&self) -> supabase_lib_rs::Result<()> {
         self.client.auth().sign_out().await
     }
 
-    async fn get_todos(&self) -> supabase::Result<Vec<Todo>> {
+    async fn get_todos(&self) -> supabase_lib_rs::Result<Vec<Todo>> {
         self.client
             .database()
             .from("todos")
@@ -63,7 +63,7 @@ impl SupabaseService {
             .await
     }
 
-    async fn create_todo(&self, title: &str) -> supabase::Result<Todo> {
+    async fn create_todo(&self, title: &str) -> supabase_lib_rs::Result<Todo> {
         let new_todo = Todo {
             id: None,
             title: title.to_string(),
@@ -83,10 +83,10 @@ impl SupabaseService {
         result
             .into_iter()
             .next()
-            .ok_or_else(|| supabase::Error::database("No todo returned from insert"))
+            .ok_or_else(|| supabase_lib_rs::Error::database("No todo returned from insert"))
     }
 
-    async fn update_todo(&self, id: i32, completed: bool) -> supabase::Result<()> {
+    async fn update_todo(&self, id: i32, completed: bool) -> supabase_lib_rs::Result<()> {
         self.client
             .database()
             .update("todos")
@@ -97,7 +97,7 @@ impl SupabaseService {
         Ok(())
     }
 
-    async fn delete_todo(&self, id: i32) -> supabase::Result<()> {
+    async fn delete_todo(&self, id: i32) -> supabase_lib_rs::Result<()> {
         self.client
             .database()
             .delete("todos")
@@ -107,7 +107,7 @@ impl SupabaseService {
         Ok(())
     }
 
-    async fn subscribe_to_todos(&self) -> supabase::Result<String> {
+    async fn subscribe_to_todos(&self) -> supabase_lib_rs::Result<String> {
         self.client.realtime().connect().await?;
 
         self.client

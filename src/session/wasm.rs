@@ -22,6 +22,7 @@ use crate::session::{CrossTabChannel, CrossTabMessage};
     target_arch = "wasm32",
     feature = "wasm"
 ))]
+#[allow(unused_imports)]
 use gloo_timers::callback::Timeout;
 #[cfg(all(
     feature = "session-management",

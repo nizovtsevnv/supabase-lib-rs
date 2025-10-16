@@ -1,7 +1,7 @@
 //! Basic usage example for Supabase Rust client
 
 use std::env;
-use supabase::prelude::*;
+use supabase_lib_rs::prelude::*;
 
 #[allow(clippy::result_large_err)]
 #[tokio::main]

@@ -1,6 +1,6 @@
 //! Realtime subscriptions example for Supabase Rust client
 
-use supabase::prelude::*;
+use supabase_lib_rs::prelude::*;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {

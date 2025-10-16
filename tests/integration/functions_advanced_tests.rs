@@ -1,7 +1,7 @@
 //! Integration tests for advanced Edge Functions features (v0.4.2)
 
 use std::{collections::HashMap, time::Duration};
-use supabase::functions::{
+use supabase_lib_rs::functions::{
     FunctionMetadata, FunctionStatus, InvokeOptions, LocalConfig, RetryConfig, StreamChunk,
 };
 

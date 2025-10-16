@@ -9,13 +9,13 @@
 
 use serde_json::json;
 use std::{collections::HashMap, sync::Arc};
-use supabase::{
+use supabase_lib_rs::{
     storage::{FileMetadata, ResumableUploadConfig, SearchOptions},
     Client,
 };
 
 #[cfg(feature = "realtime")]
-use supabase::realtime::{
+use supabase_lib_rs::realtime::{
     AdvancedFilter, FilterOperator, PresenceState, RealtimeEvent, SubscriptionConfig,
 };
 

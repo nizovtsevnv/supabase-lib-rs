@@ -1,7 +1,7 @@
 //! Storage admin operations example with service role key
 
 use std::env;
-use supabase::prelude::*;
+use supabase_lib_rs::prelude::*;
 
 #[allow(clippy::result_large_err)]
 #[tokio::main]

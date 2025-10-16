@@ -3,7 +3,7 @@
 //! Tests for presence system, broadcast messages, advanced filters, and connection pooling
 
 use std::{collections::HashMap, sync::Arc};
-use supabase::realtime::{
+use supabase_lib_rs::realtime::{
     PresenceState, AdvancedFilter, FilterOperator, SubscriptionConfig,
     RealtimeEvent, BroadcastMessage, ConnectionPool, ConnectionPoolConfig,
     ConnectionPoolStats

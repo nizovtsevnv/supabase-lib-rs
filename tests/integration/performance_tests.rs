@@ -1,7 +1,7 @@
 //! Integration tests for Performance optimization features (v0.4.2)
 
 use std::{collections::HashMap, time::Duration};
-use supabase::performance::{
+use supabase_lib_rs::performance::{
     BatchConfig, BatchOperation, CacheConfig, ConnectionPoolConfig, PerformanceMetrics,
 };
 

@@ -1,6 +1,6 @@
 //! Integration tests for database module
 
-use supabase::prelude::*;
+use supabase_lib_rs::prelude::*;
 use serde_json::json;
 
 mod common;

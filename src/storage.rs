@@ -32,6 +32,7 @@ async fn async_sleep(duration: Duration) {
 }
 
 #[cfg(all(target_arch = "wasm32", feature = "wasm"))]
+#[allow(dead_code)]
 async fn async_sleep(duration: Duration) {
     use gloo_timers::future::sleep as gloo_sleep;
     gloo_sleep(duration).await;
@@ -389,7 +390,7 @@ impl Storage {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::prelude::*;
+    /// # use supabase_lib_rs::prelude::*;
     /// # async fn example(client: &Client) -> Result<()> {
     /// let auth_response = client.auth().sign_in_with_email_and_password("user@example.com", "password").await?;
     /// let token = &auth_response.session.as_ref().unwrap().access_token;
@@ -467,7 +468,7 @@ impl Storage {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::prelude::*;
+    /// # use supabase_lib_rs::prelude::*;
     /// # use bytes::Bytes;
     /// # async fn example(client: &Client) -> Result<()> {
     /// // Get user session token after authentication
@@ -482,6 +483,7 @@ impl Storage {
     /// # Ok(())
     /// # }
     /// ```
+    #[cfg(not(target_arch = "wasm32"))]
     pub async fn upload_with_auth(
         &self,
         bucket_id: &str,
@@ -650,7 +652,7 @@ impl Storage {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::prelude::*;
+    /// # use supabase_lib_rs::prelude::*;
     /// # async fn example(client: &Client) -> Result<()> {
     /// let auth_response = client.auth().sign_in_with_email_and_password("user@example.com", "password").await?;
     /// let token = &auth_response.session.as_ref().unwrap().access_token;
@@ -716,7 +718,7 @@ impl Storage {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::prelude::*;
+    /// # use supabase_lib_rs::prelude::*;
     /// # async fn example(client: &Client) -> Result<()> {
     /// let auth_response = client.auth().sign_in_with_email_and_password("user@example.com", "password").await?;
     /// let token = &auth_response.session.as_ref().unwrap().access_token;
@@ -934,9 +936,9 @@ impl Storage {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// use supabase::storage::{ResumableUploadConfig, FileOptions};
+    /// use supabase_lib_rs::storage::{ResumableUploadConfig, FileOptions};
     ///
-    /// # async fn example(storage: &supabase::storage::Storage) -> supabase::Result<()> {
+    /// # async fn example(storage: &supabase_lib_rs::storage::Storage) -> supabase_lib_rs::Result<()> {
     /// let config = ResumableUploadConfig::default();
     /// let file_opts = FileOptions {
     ///     content_type: Some("video/mp4".to_string()),
@@ -1007,7 +1009,7 @@ impl Storage {
     /// ```rust,no_run
     /// use bytes::Bytes;
     ///
-    /// # async fn example(storage: &supabase::storage::Storage, session: &supabase::storage::UploadSession) -> supabase::Result<()> {
+    /// # async fn example(storage: &supabase_lib_rs::storage::Storage, session: &supabase_lib_rs::storage::UploadSession) -> supabase_lib_rs::Result<()> {
     /// let chunk_data = Bytes::from(vec![0u8; 1024 * 1024]); // 1MB chunk
     ///
     /// let part = storage.upload_chunk(
@@ -1076,7 +1078,7 @@ impl Storage {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// # async fn example(storage: &supabase::storage::Storage, mut session: supabase::storage::UploadSession) -> supabase::Result<()> {
+    /// # async fn example(storage: &supabase_lib_rs::storage::Storage, mut session: supabase_lib_rs::storage::UploadSession) -> supabase_lib_rs::Result<()> {
     /// // ... upload all chunks and collect parts ...
     ///
     /// let response = storage.complete_resumable_upload(&session).await?;
@@ -1125,10 +1127,10 @@ impl Storage {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// use supabase::storage::{ResumableUploadConfig, FileOptions};
+    /// use supabase_lib_rs::storage::{ResumableUploadConfig, FileOptions};
     /// use std::sync::Arc;
     ///
-    /// # async fn example(storage: &supabase::storage::Storage) -> supabase::Result<()> {
+    /// # async fn example(storage: &supabase_lib_rs::storage::Storage) -> supabase_lib_rs::Result<()> {
     /// let config = ResumableUploadConfig::default();
     /// let file_opts = FileOptions {
     ///     content_type: Some("video/mp4".to_string()),
@@ -1308,9 +1310,9 @@ impl Storage {
     /// # Examples
     /// ```rust,no_run
     /// use std::collections::HashMap;
-    /// use supabase::storage::FileMetadata;
+    /// use supabase_lib_rs::storage::FileMetadata;
     ///
-    /// # async fn example(storage: &supabase::storage::Storage) -> supabase::Result<()> {
+    /// # async fn example(storage: &supabase_lib_rs::storage::Storage) -> supabase_lib_rs::Result<()> {
     /// let mut tags = HashMap::new();
     /// tags.insert("category".to_string(), "documents".to_string());
     /// tags.insert("project".to_string(), "web-app".to_string());
@@ -1366,9 +1368,9 @@ impl Storage {
     /// # Examples
     /// ```rust,no_run
     /// use std::collections::HashMap;
-    /// use supabase::storage::SearchOptions;
+    /// use supabase_lib_rs::storage::SearchOptions;
     ///
-    /// # async fn example(storage: &supabase::storage::Storage) -> supabase::Result<()> {
+    /// # async fn example(storage: &supabase_lib_rs::storage::Storage) -> supabase_lib_rs::Result<()> {
     /// let mut tag_filter = HashMap::new();
     /// tag_filter.insert("category".to_string(), "documents".to_string());
     ///
@@ -1420,9 +1422,9 @@ impl Storage {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// use supabase::storage::{StoragePolicy, PolicyOperation};
+    /// use supabase_lib_rs::storage::{StoragePolicy, PolicyOperation};
     ///
-    /// # async fn example(storage: &supabase::storage::Storage) -> supabase::Result<()> {
+    /// # async fn example(storage: &supabase_lib_rs::storage::Storage) -> supabase_lib_rs::Result<()> {
     /// let policy = StoragePolicy {
     ///     name: "user_files_policy".to_string(),
     ///     bucket_id: "user-files".to_string(),
@@ -1473,9 +1475,9 @@ impl Storage {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// use supabase::storage::{StoragePolicy, PolicyOperation};
+    /// use supabase_lib_rs::storage::{StoragePolicy, PolicyOperation};
     ///
-    /// # async fn example(storage: &supabase::storage::Storage) -> supabase::Result<()> {
+    /// # async fn example(storage: &supabase_lib_rs::storage::Storage) -> supabase_lib_rs::Result<()> {
     /// let updated_policy = StoragePolicy {
     ///     name: "user_files_policy".to_string(),
     ///     bucket_id: "user-files".to_string(),
@@ -1526,7 +1528,7 @@ impl Storage {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// # async fn example(storage: &supabase::storage::Storage) -> supabase::Result<()> {
+    /// # async fn example(storage: &supabase_lib_rs::storage::Storage) -> supabase_lib_rs::Result<()> {
     /// storage.delete_policy("user-files", "user_files_policy").await?;
     /// # Ok(())
     /// # }
@@ -1569,7 +1571,7 @@ impl Storage {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// # async fn example(storage: &supabase::storage::Storage) -> supabase::Result<()> {
+    /// # async fn example(storage: &supabase_lib_rs::storage::Storage) -> supabase_lib_rs::Result<()> {
     /// let policies = storage.list_policies("user-files").await?;
     /// println!("Found {} policies", policies.len());
     /// # Ok(())
@@ -1615,9 +1617,9 @@ impl Storage {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// use supabase::storage::PolicyOperation;
+    /// use supabase_lib_rs::storage::PolicyOperation;
     ///
-    /// # async fn example(storage: &supabase::storage::Storage) -> supabase::Result<()> {
+    /// # async fn example(storage: &supabase_lib_rs::storage::Storage) -> supabase_lib_rs::Result<()> {
     /// let can_access = storage.test_policy_access(
     ///     "user-files",
     ///     "user123/document.pdf",
@@ -1682,9 +1684,9 @@ impl Storage {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// use supabase::storage::PolicyTemplate;
+    /// use supabase_lib_rs::storage::PolicyTemplate;
     ///
-    /// # async fn example(storage: &supabase::storage::Storage) -> supabase::Result<()> {
+    /// # async fn example(storage: &supabase_lib_rs::storage::Storage) -> supabase_lib_rs::Result<()> {
     /// let policy = storage.generate_policy_template(
     ///     "user-files",
     ///     "user_files_access",

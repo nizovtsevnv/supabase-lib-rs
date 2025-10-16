@@ -15,7 +15,7 @@
 //! ```
 
 use std::env;
-use supabase::Client;
+use supabase_lib_rs::Client;
 
 /// Test configuration for integration tests
 #[derive(Debug, Clone)]

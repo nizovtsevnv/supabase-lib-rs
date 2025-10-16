@@ -7,8 +7,8 @@
 //! ## Usage
 //!
 //! ```rust,no_run
-//! use supabase::Client;
-//! use supabase::realtime::RealtimeEvent;
+//! use supabase_lib_rs::Client;
+//! use supabase_lib_rs::realtime::RealtimeEvent;
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! let client = Client::new("your-url", "your-key")?;
@@ -72,9 +72,9 @@ pub type ConnectionStorage = Arc<RuntimeLock<Vec<Option<Box<dyn WebSocketConnect
 ///
 /// ## Basic subscription
 /// ```rust,no_run
-/// use supabase::{Client, realtime::RealtimeEvent};
+/// use supabase_lib_rs::{Client, realtime::RealtimeEvent};
 ///
-/// # async fn example() -> supabase::Result<()> {
+/// # async fn example() -> supabase_lib_rs::Result<()> {
 /// let client = Client::new("your-url", "your-key")?;
 /// let realtime = client.realtime();
 ///
@@ -148,7 +148,7 @@ impl std::fmt::Debug for Subscription {
 ///
 /// # Examples
 /// ```rust
-/// use supabase::realtime::{SubscriptionConfig, RealtimeEvent, AdvancedFilter, FilterOperator};
+/// use supabase_lib_rs::realtime::{SubscriptionConfig, RealtimeEvent, AdvancedFilter, FilterOperator};
 /// use std::collections::HashMap;
 ///
 /// let config = SubscriptionConfig {
@@ -227,7 +227,7 @@ impl Default for SubscriptionConfig {
 ///
 /// # Examples
 /// ```rust
-/// use supabase::realtime::RealtimeEvent;
+/// use supabase_lib_rs::realtime::RealtimeEvent;
 ///
 /// // Listen to all events
 /// let all_events = RealtimeEvent::All;
@@ -527,8 +527,8 @@ impl Realtime {
     ///
     /// # Examples
     /// ```rust
-    /// use supabase::types::SupabaseConfig;
-    /// use supabase::realtime::Realtime;
+    /// use supabase_lib_rs::types::SupabaseConfig;
+    /// use supabase_lib_rs::realtime::Realtime;
     /// use std::sync::Arc;
     ///
     /// let config = Arc::new(SupabaseConfig {
@@ -569,8 +569,8 @@ impl Realtime {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// # use supabase::Client;
-    /// # async fn example() -> supabase::Result<()> {
+    /// # use supabase_lib_rs::Client;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let client = Client::new("your-url", "your-key")?;
     /// let realtime = client.realtime();
     ///
@@ -611,8 +611,8 @@ impl Realtime {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// # use supabase::Client;
-    /// # async fn example() -> supabase::Result<()> {
+    /// # use supabase_lib_rs::Client;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let client = Client::new("your-url", "your-key")?;
     /// let realtime = client.realtime();
     ///
@@ -649,8 +649,8 @@ impl Realtime {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// # use supabase::Client;
-    /// # async fn example() -> supabase::Result<()> {
+    /// # use supabase_lib_rs::Client;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let client = Client::new("your-url", "your-key")?;
     /// let realtime = client.realtime();
     ///
@@ -673,8 +673,8 @@ impl Realtime {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// # use supabase::Client;
-    /// # async fn example() -> supabase::Result<()> {
+    /// # use supabase_lib_rs::Client;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let client = Client::new("your-url", "your-key")?;
     ///
     /// let subscription = client.realtime()
@@ -696,8 +696,8 @@ impl Realtime {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// # use supabase::Client;
-    /// # async fn example() -> supabase::Result<()> {
+    /// # use supabase_lib_rs::Client;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let client = Client::new("your-url", "your-key")?;
     /// let realtime = client.realtime();
     ///
@@ -1059,10 +1059,10 @@ impl Realtime {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// use supabase::realtime::PresenceState;
+    /// use supabase_lib_rs::realtime::PresenceState;
     /// use std::collections::HashMap;
     ///
-    /// # async fn example(realtime: &supabase::realtime::Realtime) -> supabase::Result<()> {
+    /// # async fn example(realtime: &supabase_lib_rs::realtime::Realtime) -> supabase_lib_rs::Result<()> {
     /// let mut metadata = HashMap::new();
     /// metadata.insert("status".to_string(), serde_json::Value::String("online".to_string()));
     /// metadata.insert("location".to_string(), serde_json::Value::String("dashboard".to_string()));
@@ -1118,7 +1118,7 @@ impl Realtime {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// # async fn example(realtime: &supabase::realtime::Realtime) -> supabase::Result<()> {
+    /// # async fn example(realtime: &supabase_lib_rs::realtime::Realtime) -> supabase_lib_rs::Result<()> {
     /// realtime.untrack_presence("lobby", "user123").await?;
     /// # Ok(())
     /// # }
@@ -1163,7 +1163,7 @@ impl Realtime {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// # async fn example(realtime: &supabase::realtime::Realtime) -> supabase::Result<()> {
+    /// # async fn example(realtime: &supabase_lib_rs::realtime::Realtime) -> supabase_lib_rs::Result<()> {
     /// let present_users = realtime.get_presence("lobby").await?;
     /// println!("Users online: {}", present_users.len());
     /// # Ok(())
@@ -1207,7 +1207,7 @@ impl Realtime {
     /// ```rust,no_run
     /// use serde_json::json;
     ///
-    /// # async fn example(realtime: &supabase::realtime::Realtime) -> supabase::Result<()> {
+    /// # async fn example(realtime: &supabase_lib_rs::realtime::Realtime) -> supabase_lib_rs::Result<()> {
     /// let payload = json!({
     ///     "message": "Hello, everyone!",
     ///     "from": "user123",
@@ -1269,10 +1269,10 @@ impl Realtime {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// use supabase::realtime::{SubscriptionConfig, RealtimeEvent, AdvancedFilter, FilterOperator};
+    /// use supabase_lib_rs::realtime::{SubscriptionConfig, RealtimeEvent, AdvancedFilter, FilterOperator};
     /// use std::sync::Arc;
     ///
-    /// # async fn example(realtime: &supabase::realtime::Realtime) -> supabase::Result<()> {
+    /// # async fn example(realtime: &supabase_lib_rs::realtime::Realtime) -> supabase_lib_rs::Result<()> {
     /// let config = SubscriptionConfig {
     ///     table: Some("posts".to_string()),
     ///     schema: "public".to_string(),
@@ -1580,9 +1580,9 @@ impl Realtime {
 ///
 /// # Examples
 /// ```rust,no_run
-/// # use supabase::Client;
-/// # use supabase::realtime::RealtimeEvent;
-/// # async fn example() -> supabase::Result<()> {
+/// # use supabase_lib_rs::Client;
+/// # use supabase_lib_rs::realtime::RealtimeEvent;
+/// # async fn example() -> supabase_lib_rs::Result<()> {
 /// let client = Client::new("your-url", "your-key")?;
 ///
 /// let subscription = client.realtime()
@@ -1609,8 +1609,8 @@ impl ChannelBuilder {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// # use supabase::Client;
-    /// # async fn example() -> supabase::Result<()> {
+    /// # use supabase_lib_rs::Client;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let client = Client::new("your-url", "your-key")?;
     ///
     /// let subscription = client.realtime()
@@ -1630,8 +1630,8 @@ impl ChannelBuilder {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// # use supabase::Client;
-    /// # async fn example() -> supabase::Result<()> {
+    /// # use supabase_lib_rs::Client;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let client = Client::new("your-url", "your-key")?;
     ///
     /// let subscription = client.realtime()
@@ -1652,9 +1652,9 @@ impl ChannelBuilder {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// # use supabase::Client;
-    /// # use supabase::realtime::RealtimeEvent;
-    /// # async fn example() -> supabase::Result<()> {
+    /// # use supabase_lib_rs::Client;
+    /// # use supabase_lib_rs::realtime::RealtimeEvent;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let client = Client::new("your-url", "your-key")?;
     ///
     /// // Only listen to INSERT events
@@ -1676,8 +1676,8 @@ impl ChannelBuilder {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// # use supabase::Client;
-    /// # async fn example() -> supabase::Result<()> {
+    /// # use supabase_lib_rs::Client;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let client = Client::new("your-url", "your-key")?;
     ///
     /// // Only posts by specific author
@@ -1699,8 +1699,8 @@ impl ChannelBuilder {
     ///
     /// # Examples
     /// ```rust,no_run
-    /// # use supabase::Client;
-    /// # async fn example() -> supabase::Result<()> {
+    /// # use supabase_lib_rs::Client;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
     /// let client = Client::new("your-url", "your-key")?;
     ///
     /// let subscription_id = client.realtime()

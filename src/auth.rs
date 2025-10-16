@@ -820,10 +820,10 @@ impl Auth {
     /// # Example
     ///
     /// ```rust
-    /// use supabase::auth::{OAuthProvider, OAuthOptions};
+    /// use supabase_lib_rs::auth::{OAuthProvider, OAuthOptions};
     ///
-    /// # async fn example() -> supabase::Result<()> {
-    /// let client = supabase::Client::new("url", "key")?;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
+    /// let client = supabase_lib_rs::Client::new("url", "key")?;
     ///
     /// let options = OAuthOptions {
     ///     redirect_to: Some("https://myapp.com/callback".to_string()),
@@ -881,8 +881,8 @@ impl Auth {
     /// # Example
     ///
     /// ```rust
-    /// # async fn example() -> supabase::Result<()> {
-    /// let client = supabase::Client::new("url", "key")?;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
+    /// let client = supabase_lib_rs::Client::new("url", "key")?;
     ///
     /// let response = client.auth()
     ///     .sign_up_with_phone("+1234567890", "securepassword", None)
@@ -940,8 +940,8 @@ impl Auth {
     /// # Example
     ///
     /// ```rust
-    /// # async fn example() -> supabase::Result<()> {
-    /// let client = supabase::Client::new("url", "key")?;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
+    /// let client = supabase_lib_rs::Client::new("url", "key")?;
     ///
     /// let response = client.auth()
     ///     .sign_in_with_phone("+1234567890", "securepassword")
@@ -1001,8 +1001,8 @@ impl Auth {
     /// # Example
     ///
     /// ```rust
-    /// # async fn example() -> supabase::Result<()> {
-    /// let client = supabase::Client::new("url", "key")?;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
+    /// let client = supabase_lib_rs::Client::new("url", "key")?;
     ///
     /// let response = client.auth()
     ///     .verify_otp("+1234567890", "123456", "sms")
@@ -1060,8 +1060,8 @@ impl Auth {
     /// # Example
     ///
     /// ```rust
-    /// # async fn example() -> supabase::Result<()> {
-    /// let client = supabase::Client::new("url", "key")?;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
+    /// let client = supabase_lib_rs::Client::new("url", "key")?;
     ///
     /// client.auth()
     ///     .sign_in_with_magic_link("user@example.com", Some("https://myapp.com/callback".to_string()), None)
@@ -1112,8 +1112,8 @@ impl Auth {
     /// # Example
     ///
     /// ```rust
-    /// # async fn example() -> supabase::Result<()> {
-    /// let client = supabase::Client::new("url", "key")?;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
+    /// let client = supabase_lib_rs::Client::new("url", "key")?;
     ///
     /// let response = client.auth()
     ///     .sign_in_anonymously(None)
@@ -1166,8 +1166,8 @@ impl Auth {
     /// # Example
     ///
     /// ```rust
-    /// # async fn example() -> supabase::Result<()> {
-    /// let client = supabase::Client::new("url", "key")?;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
+    /// let client = supabase_lib_rs::Client::new("url", "key")?;
     ///
     /// client.auth()
     ///     .reset_password_for_email_enhanced("user@example.com", Some("https://myapp.com/reset".to_string()))
@@ -1217,10 +1217,10 @@ impl Auth {
     /// # Example
     ///
     /// ```rust
-    /// use supabase::auth::AuthEvent;
+    /// use supabase_lib_rs::auth::AuthEvent;
     ///
-    /// # async fn example() -> supabase::Result<()> {
-    /// let client = supabase::Client::new("url", "key")?;
+    /// # async fn example() -> supabase_lib_rs::Result<()> {
+    /// let client = supabase_lib_rs::Client::new("url", "key")?;
     ///
     /// let handle = client.auth().on_auth_state_change(|event, session| {
     ///     match event {
@@ -1294,7 +1294,7 @@ impl Auth {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
     ///
@@ -1328,7 +1328,7 @@ impl Auth {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
     ///
@@ -1390,7 +1390,7 @@ impl Auth {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
     ///
@@ -1449,7 +1449,7 @@ impl Auth {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use uuid::Uuid;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
@@ -1498,7 +1498,7 @@ impl Auth {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use uuid::Uuid;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
@@ -1564,7 +1564,7 @@ impl Auth {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # use uuid::Uuid;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
@@ -1606,7 +1606,7 @@ impl Auth {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
     ///
@@ -1649,7 +1649,7 @@ impl Auth {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
     ///
@@ -1692,7 +1692,7 @@ impl Auth {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
     ///
@@ -1830,7 +1830,7 @@ impl Auth {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
     ///
@@ -1864,7 +1864,7 @@ impl Auth {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
     ///
@@ -1901,7 +1901,7 @@ impl Auth {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use supabase::Client;
+    /// # use supabase_lib_rs::Client;
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::new("https://example.supabase.co", "your-anon-key")?;
     ///

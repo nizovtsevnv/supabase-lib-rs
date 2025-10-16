@@ -2,7 +2,7 @@
 
 use bytes::Bytes;
 use std::env;
-use supabase::prelude::*;
+use supabase_lib_rs::prelude::*;
 
 #[allow(clippy::result_large_err)]
 #[tokio::main]
@@ -84,7 +84,7 @@ async fn main() -> Result<()> {
     let file_bytes = Bytes::from(file_content.as_bytes());
     let file_path = "test/hello.txt";
 
-    let upload_options = supabase::storage::FileOptions {
+    let upload_options = supabase_lib_rs::storage::FileOptions {
         content_type: Some("text/plain".to_string()),
         cache_control: Some("max-age=3600".to_string()),
         upsert: true,
@@ -166,11 +166,11 @@ async fn main() -> Result<()> {
     println!("\n🖼️ Example 9: Image transformations (example URL)");
     let image_path = "images/avatar.jpg";
 
-    let transform_options = supabase::storage::TransformOptions {
+    let transform_options = supabase_lib_rs::storage::TransformOptions {
         width: Some(200),
         height: Some(200),
-        resize: Some(supabase::storage::ResizeMode::Cover),
-        format: Some(supabase::storage::ImageFormat::Webp),
+        resize: Some(supabase_lib_rs::storage::ResizeMode::Cover),
+        format: Some(supabase_lib_rs::storage::ImageFormat::Webp),
         quality: Some(80),
     };
 

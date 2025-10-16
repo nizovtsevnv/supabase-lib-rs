@@ -24,7 +24,7 @@
 //! ## 🚀 Quick Start
 //!
 //! ```rust
-//! use supabase::auth::AuthEvent;
+//! use supabase_lib_rs::auth::AuthEvent;
 //! use serde::{Deserialize, Serialize};
 //!
 //! #[derive(Debug, Serialize, Deserialize)]
@@ -35,7 +35,7 @@
 //! }
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//!     let client = supabase::Client::new("https://example.supabase.co", "valid-key")?;
+//!     let client = supabase_lib_rs::Client::new("https://example.supabase.co", "valid-key")?;
 //!
 //!     // Set up authentication event listener
 //!     let _handle = client.auth().on_auth_state_change(|event, session| {
@@ -74,10 +74,10 @@
 //! ### OAuth Providers
 //!
 //! ```rust
-//! use supabase::auth::{OAuthProvider, OAuthOptions};
+//! use supabase_lib_rs::auth::{OAuthProvider, OAuthOptions};
 //!
-//! # async fn example() -> supabase::Result<()> {
-//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//! # async fn example() -> supabase_lib_rs::Result<()> {
+//! # let client = supabase_lib_rs::Client::new("https://example.supabase.co", "your-anon-key")?;
 //! // Google OAuth
 //! let options = OAuthOptions {
 //!     redirect_to: Some("https://myapp.com/callback".to_string()),
@@ -97,8 +97,8 @@
 //! ### Phone Authentication
 //!
 //! ```rust
-//! # async fn example() -> supabase::Result<()> {
-//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//! # async fn example() -> supabase_lib_rs::Result<()> {
+//! # let client = supabase_lib_rs::Client::new("https://example.supabase.co", "your-anon-key")?;
 //! // Sign up with phone
 //! let auth_response = client.auth()
 //!     .sign_up_with_phone("+1234567890", "secure_password", None)
@@ -115,8 +115,8 @@
 //! ### Magic Links
 //!
 //! ```rust
-//! # async fn example() -> supabase::Result<()> {
-//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//! # async fn example() -> supabase_lib_rs::Result<()> {
+//! # let client = supabase_lib_rs::Client::new("https://example.supabase.co", "your-anon-key")?;
 //! // Send magic link
 //! client.auth()
 //!     .sign_in_with_magic_link(
@@ -134,8 +134,8 @@
 //! ### Anonymous Sign-in
 //!
 //! ```rust
-//! # async fn example() -> supabase::Result<()> {
-//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//! # async fn example() -> supabase_lib_rs::Result<()> {
+//! # let client = supabase_lib_rs::Client::new("https://example.supabase.co", "your-anon-key")?;
 //! // Create anonymous user
 //! let auth_response = client.auth()
 //!     .sign_in_anonymously(None)
@@ -153,11 +153,11 @@
 //! ### Complex Queries
 //!
 //! ```rust,no_run
-//! # use supabase::Client;
-//! # use supabase::types::OrderDirection;
+//! # use supabase_lib_rs::Client;
+//! # use supabase_lib_rs::types::OrderDirection;
 //! # use serde_json::Value;
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//! # let client = supabase_lib_rs::Client::new("https://example.supabase.co", "your-anon-key")?;
 //!   let posts: Vec<Value> = client.database()
 //!       .from("posts")
 //!       .select("*")
@@ -175,10 +175,10 @@
 //! ### Query Joins
 //!
 //! ```rust,no_run
-//! # use supabase::Client;
+//! # use supabase_lib_rs::Client;
 //! # use serde_json::Value;
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//! # let client = supabase_lib_rs::Client::new("https://example.supabase.co", "your-anon-key")?;
 //!   let posts_with_authors: Vec<Value> = client.database()
 //!       .from("posts")
 //!       .select("id, title, users(name, email)")
@@ -192,7 +192,7 @@
 //! ### Transactions
 //!
 //! ```rust,no_run
-//! # use supabase::Client;
+//! # use supabase_lib_rs::Client;
 //! # use serde::{Deserialize, Serialize};
 //! # use serde_json::json;
 //! #
@@ -200,7 +200,7 @@
 //! # struct User { id: i32, name: String, email: String }
 //! #
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//! # let client = supabase_lib_rs::Client::new("https://example.supabase.co", "your-anon-key")?;
 //!   let result: Vec<User> = client.database()
 //!       .begin_transaction()
 //!       .insert("users", json!({"name": "John", "email": "john@example.com"}))
@@ -219,8 +219,8 @@
 //! ```rust
 //! // Full async/await support with Tokio runtime
 //! #[tokio::main]
-//! async fn main() -> supabase::Result<()> {
-//!     let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//! async fn main() -> supabase_lib_rs::Result<()> {
+//!     let client = supabase_lib_rs::Client::new("https://example.supabase.co", "your-anon-key")?;
 //!     // All operations available
 //!     Ok(())
 //! }
@@ -232,7 +232,7 @@
 //!
 //! #[wasm_bindgen]
 //! pub async fn initialize_supabase() -> Result<(), JsValue> {
-//!     let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")
+//!     let client = supabase_lib_rs::Client::new("https://example.supabase.co", "your-anon-key")
 //!         .map_err(|e| JsValue::from_str(&e.to_string()))?;
 //!
 //!     // Enhanced error handling with platform-specific context
@@ -253,10 +253,10 @@
 //! v0.3.1 introduces comprehensive error context with platform-specific information:
 //!
 //! ```rust
-//! use supabase::error::{ErrorContext, PlatformContext};
+//! use supabase_lib_rs::error::{ErrorContext, PlatformContext};
 //!
-//! # async fn example() -> supabase::Result<()> {
-//! # let client = supabase::Client::new("https://example.supabase.co", "your-anon-key")?;
+//! # async fn example() -> supabase_lib_rs::Result<()> {
+//! # let client = supabase_lib_rs::Client::new("https://example.supabase.co", "your-anon-key")?;
 //! match client.auth().sign_in_with_email_and_password("user@example.com", "password").await {
 //!     Ok(response) => println!("Success!"),
 //!     Err(e) => {
@@ -304,7 +304,7 @@
 //! ## 🔧 Configuration
 //!
 //! ```rust,no_run
-//! use supabase::{Client, types::{SupabaseConfig, HttpConfig, AuthConfig}};
+//! use supabase_lib_rs::{Client, types::{SupabaseConfig, HttpConfig, AuthConfig}};
 //! use std::time::Duration;
 //!
 //! # fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -390,7 +390,7 @@ pub use functions::Functions;
 /// ## Usage
 ///
 /// ```rust
-/// use supabase::prelude::*;
+/// use supabase_lib_rs::prelude::*;
 ///
 /// // Now you have access to Client, Error, Result, and all common types
 /// # fn example() -> Result<()> {

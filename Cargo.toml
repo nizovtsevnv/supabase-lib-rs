@@ -1,6 +1,6 @@
 [package]
 name = "supabase-lib-rs"
-version = "0.5.3"
+version = "0.5.4"
 description = "A comprehensive, production-ready Rust client library for Supabase with full cross-platform support (native + WASM)"
 authors = ["Nick Nizovtsev <nizovtsevnv@users.noreply.github.com>"]
 license = "MIT"
@@ -29,7 +29,7 @@ exclude = [
 docsrs = { repository = "https://docs.rs/supabase-lib-rs" }
 
 [lib]
-name = "supabase"
+name = "supabase_lib_rs"
 # Поддержка разных типов библиотек:
 # - lib: обычная Rust библиотека (crates.io)
 # - staticlib: статическая C-совместимая библиотека (.a/.lib)

@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::env;
-use supabase::prelude::*;
+use supabase_lib_rs::prelude::*;
 
 // Example data structures for database operations
 #[derive(Debug, Clone, Serialize, Deserialize)]

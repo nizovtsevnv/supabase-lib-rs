@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.4] - 2025-10-16
+
+> **🐛 Build Fixes**: Critical fixes for WASM and Python packages.
+
+### Fixed
+- **WASM Build Compatibility**: Added `#[cfg(not(target_arch = "wasm32"))]` guard to native `upload_with_auth()` function to prevent multipart compilation errors on WASM target
+- **Python Bindings**: Fixed `ImportError` by changing library name from `supabase` to `supabase_lib_rs` to match `#[pymodule]` function name (required by PyO3/maturin)
+- **Code Warnings**: Added `#[allow(unused_imports)]` and `#[allow(dead_code)]` attributes to suppress WASM-specific warnings
+
+### Changed
+- **BREAKING for Rust users**: Library name changed from `supabase` to `supabase_lib_rs` in `Cargo.toml` to fix Python bindings
+  - Update imports from `use supabase::` to `use supabase_lib_rs::`
+  - This enables proper Python package functionality while maintaining crates.io package name
+- All internal imports updated to use new library name
+
+### Quality
+- ✅ WASM builds cleanly without errors or warnings
+- ✅ Python wheels can be properly imported after installation
+- ✅ All 43 unit tests passing
+- ✅ Zero clippy warnings (strict mode with `-D warnings`)
+- ✅ Code properly formatted
+
 ## [0.5.3] - 2025-10-16
 
 > **🔐 Authenticated Storage**: Full support for Row Level Security (RLS) policies with user authentication tokens.
