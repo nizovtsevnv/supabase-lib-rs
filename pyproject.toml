@@ -38,5 +38,4 @@ Issues = "https://github.com/nizovtsevnv/supabase-lib-rs/issues"
 [tool.maturin]
 features = ["python"]
 module-name = "supabase_lib_rs"
-python-source = "python"
 strip = true
