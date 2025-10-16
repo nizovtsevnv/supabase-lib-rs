@@ -134,16 +134,8 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           mkdir artifacts/${{ matrix.target }}
-
-          # Статическая библиотека
           copy target\${{ matrix.target }}\release\${{ matrix.static_name }} artifacts\${{ matrix.target }}\
-
-          # Динамическая библиотека
-          if exist target\${{ matrix.target }}\release\${{ matrix.lib_name }} (
-            copy target\${{ matrix.target }}\release\${{ matrix.lib_name }} artifacts\${{ matrix.target }}\
-          )
-
-          # Создаем архив
+          if exist target\${{ matrix.target }}\release\${{ matrix.lib_name }} (copy target\${{ matrix.target }}\release\${{ matrix.lib_name }} artifacts\${{ matrix.target }}\)
           cd artifacts
           tar -czf supabase-${{ matrix.target }}.tar.gz ${{ matrix.target }}/
         shell: cmd
@@ -172,8 +164,10 @@ jobs:
 
       - name: Build WASM package
         run: |
-          wasm-pack build --target web --features "auth database storage functions wasm" --out-dir pkg-web
-          wasm-pack build --target nodejs --features "auth database storage functions wasm" --out-dir pkg-node
+          wasm-pack build --target web --features "auth database storage functions wasm"
+          mv pkg pkg-web
+          wasm-pack build --target nodejs --features "auth database storage functions wasm"
+          mv pkg pkg-node
 
       - name: Prepare WASM artifacts
         run: |
