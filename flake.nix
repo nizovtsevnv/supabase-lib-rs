@@ -42,6 +42,7 @@
 
           # Development tools
           git
+          gh
           just
           cargo-audit
           cargo-deny
