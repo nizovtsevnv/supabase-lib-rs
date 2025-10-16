@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2025-10-16
+
+> **🔐 Authenticated Storage**: Full support for Row Level Security (RLS) policies with user authentication tokens.
+
+### Added
+- **Authenticated Storage Operations**: New `*_with_auth()` methods for Storage API
+  - `upload_with_auth()` - Upload files with user authentication token
+  - `download_with_auth()` - Download files with user authentication token
+  - `list_with_auth()` - List files with user authentication token
+  - `remove_with_auth()` - Delete files with user authentication token
+  - Enables operations on buckets with Row Level Security (RLS) policies
+  - Provides decoupling between auth and storage modules
+  - Allows using both user tokens and service role keys flexibly
+- **Storage Authentication Example**: New `storage_auth_example.rs` demonstrating authenticated operations with RLS
+
+### Changed
+- **Storage API Enhancement**: Existing methods (`upload`, `download`, `list`, `remove`) now delegate to `*_with_auth()` methods with `None` token for backward compatibility
+
+### Fixed
+- **WASM Examples**: Added `#[allow(dead_code)]` to unused structs in examples to prevent CI clippy warnings
+
+### Documentation
+- Complete documentation with usage examples for all authenticated storage methods
+- Updated all doc examples to use correct `AuthResponse` structure
+
+## [0.5.2] - 2025-10-16
+
+> **🔒 Security & WASM**: Critical security fixes and comprehensive WASM compatibility improvements.
+
+### Security
+- Updated tracing-subscriber from 0.3.19 to 0.3.20 (fixes RUSTSEC-2025-0055: ANSI escape sequences vulnerability)
+- Updated image dependency to 0.25.7
+- Added RUSTSEC-2024-0436 (paste unmaintained) to ignore list
+- Added NCSA license to allowed licenses
+
+### WASM Compatibility
+- Fixed 48+ compilation errors for wasm32-unknown-unknown target
+- Added cross-platform async_sleep implementations (tokio for native, gloo-timers for WASM)
+- Created WASM-compatible RwLock wrapper in performance.rs
+- Fixed session management modules for WASM with/without wasm feature
+- Added platform-specific HTTP client configurations
+- Fixed Send/Sync trait implementations for WASM single-threaded context
+- Fixed conditional imports (warn macro only for native)
+
+### Code Quality
+- Fixed deprecated generic-array warnings in encryption module
+- All clippy warnings resolved (strict mode with -D warnings)
+- All 72+ tests passing
+- Code properly formatted
+- WASM builds cleanly without warnings
+
 ## [0.5.1] - 2025-08-15
 
 > **🔧 Quality & Stability Focus**: Refined v0.5.0 with enhanced code quality, better testing, and improved development practices.

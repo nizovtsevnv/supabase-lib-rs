@@ -53,7 +53,7 @@ async fn email_auth_example() -> Result<()> {
         .auth()
         .sign_up_with_email_and_password("user@example.com", "password")
         .await?;
-    
+
     // Sign in
     let signin_response = client
         .auth()
@@ -67,7 +67,7 @@ async fn email_auth_example() -> Result<()> {
 
     // Sign out
     client.auth().sign_out().await?;
-    
+
     Ok(())
 }
 ```
@@ -83,7 +83,7 @@ async fn oauth_example() -> Result<()> {
         .auth()
         .get_oauth_url("google", "https://yourapp.com/callback")
         .await?;
-    
+
     println!("Visit: {}", auth_url);
 
     // After OAuth callback, exchange code for session
@@ -91,7 +91,7 @@ async fn oauth_example() -> Result<()> {
         .auth()
         .exchange_oauth_code("authorization_code")
         .await?;
-    
+
     Ok(())
 }
 ```
@@ -282,6 +282,75 @@ async fn storage_operations() -> Result<()> {
         .storage()
         .from("avatars")
         .remove(&["user-123/avatar.jpg"])
+        .await?;
+
+    Ok(())
+}
+```
+
+### Authenticated Storage with RLS (Row Level Security)
+
+```rust
+use bytes::Bytes;
+
+async fn authenticated_storage() -> Result<()> {
+    let client = Client::new("your-url", "your-key")?;
+
+    // Sign in user
+    let auth_response = client
+        .auth()
+        .sign_in_with_email_and_password("user@example.com", "password")
+        .await?;
+
+    let session = auth_response.session.as_ref().unwrap();
+    let user = auth_response.user.as_ref().unwrap();
+    let token = &session.access_token;
+
+    // Upload to protected bucket (requires user authentication)
+    let file_data = Bytes::from("private document content");
+    let upload_result = client
+        .storage()
+        .upload_with_auth(
+            "private-files",
+            &format!("users/{}/document.txt", user.id),
+            file_data,
+            None,
+            Some(token)
+        )
+        .await?;
+
+    println!("Private file uploaded: {}", upload_result.key);
+
+    // List user's files
+    let files = client
+        .storage()
+        .list_with_auth(
+            "private-files",
+            Some(&format!("users/{}/", user.id)),
+            Some(token)
+        )
+        .await?;
+
+    println!("Found {} files", files.len());
+
+    // Download protected file
+    let file_data = client
+        .storage()
+        .download_with_auth(
+            "private-files",
+            &format!("users/{}/document.txt", user.id),
+            Some(token)
+        )
+        .await?;
+
+    // Delete protected file
+    client
+        .storage()
+        .remove_with_auth(
+            "private-files",
+            &[&format!("users/{}/document.txt", user.id)],
+            Some(token)
+        )
         .await?;
 
     Ok(())
@@ -563,7 +632,7 @@ where
     Fut: Future<Output = Result<T>>,
 {
     let mut attempts = 0;
-    
+
     loop {
         match operation().await {
             Ok(result) => return Ok(result),
@@ -588,6 +657,6 @@ let result = retry_operation(
 ## Related Documentation
 
 - [Configuration Guide](CONFIGURATION.md)
-- [Architecture Guide](ARCHITECTURE.md) 
+- [Architecture Guide](ARCHITECTURE.md)
 - [WebAssembly Guide](WASM_GUIDE.md)
-- [API Documentation](https://docs.rs/supabase-lib-rs) 
+- [API Documentation](https://docs.rs/supabase-lib-rs)

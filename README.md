@@ -24,7 +24,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-supabase-lib-rs = "0.5.1"
+supabase-lib-rs = "0.5.3"
 tokio = { version = "1.0", features = ["full"] }
 ```
 
@@ -74,17 +74,17 @@ async fn main() -> Result<()> {
 
 ## 📚 Documentation
 
-| Document | Description |
-|----------|-------------|
-| **[Examples & Usage Guide](docs/EXAMPLES.md)** | Comprehensive examples for all features |
-| **[Configuration Guide](docs/CONFIGURATION.md)** | Setup and configuration options |
-| **[Architecture Guide](docs/ARCHITECTURE.md)** | Library design and architecture |
-| **[WebAssembly Guide](docs/WASM_GUIDE.md)** | WASM integration and deployment |
-| **[Testing Guide](TESTING.md)** | Testing setup and guidelines |
-| **[Contributing Guide](CONTRIBUTING.md)** | Development and contribution guidelines |
-| **[Changelog](CHANGELOG.md)** | Release history and changes |
-| **[Roadmap](ROADMAP.md)** | Future development plans |
-| **[API Documentation](https://docs.rs/supabase-lib-rs)** | Complete API reference |
+| Document                                                 | Description                             |
+| -------------------------------------------------------- | --------------------------------------- |
+| **[Examples & Usage Guide](docs/EXAMPLES.md)**           | Comprehensive examples for all features |
+| **[Configuration Guide](docs/CONFIGURATION.md)**         | Setup and configuration options         |
+| **[Architecture Guide](docs/ARCHITECTURE.md)**           | Library design and architecture         |
+| **[WebAssembly Guide](docs/WASM_GUIDE.md)**              | WASM integration and deployment         |
+| **[Testing Guide](TESTING.md)**                          | Testing setup and guidelines            |
+| **[Contributing Guide](CONTRIBUTING.md)**                | Development and contribution guidelines |
+| **[Changelog](CHANGELOG.md)**                            | Release history and changes             |
+| **[Roadmap](ROADMAP.md)**                                | Future development plans                |
+| **[API Documentation](https://docs.rs/supabase-lib-rs)** | Complete API reference                  |
 
 ## 🤝 Contributing
 

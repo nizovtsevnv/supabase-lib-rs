@@ -501,7 +501,7 @@ For manual releases, use the GitHub Actions workflows:
 ### Version Management
 
 - Follow semantic versioning: `MAJOR.MINOR.PATCH`
-- Version bumps trigger automatic releases when tagged (`git tag v0.5.2`)
+- Version bumps trigger automatic releases when tagged (`git tag v0.5.3`)
 - Always update `CHANGELOG.md` before releases
 - Test thoroughly on all target platforms
 

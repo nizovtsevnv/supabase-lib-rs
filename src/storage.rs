@@ -372,6 +372,40 @@ impl Storage {
 
     /// List files in a bucket
     pub async fn list(&self, bucket_id: &str, path: Option<&str>) -> Result<Vec<FileObject>> {
+        self.list_with_auth(bucket_id, path, None).await
+    }
+
+    /// List files in a bucket with authentication token
+    ///
+    /// This method allows passing a user authentication token for listing
+    /// files in protected buckets with Row Level Security policies.
+    ///
+    /// # Arguments
+    ///
+    /// * `bucket_id` - The bucket identifier
+    /// * `path` - Optional path prefix to filter files
+    /// * `user_token` - Optional user JWT token for authenticated requests
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::prelude::*;
+    /// # async fn example(client: &Client) -> Result<()> {
+    /// let auth_response = client.auth().sign_in_with_email_and_password("user@example.com", "password").await?;
+    /// let token = &auth_response.session.as_ref().unwrap().access_token;
+    ///
+    /// let files = client.storage()
+    ///     .list_with_auth("private-bucket", Some("user-files/"), Some(token))
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn list_with_auth(
+        &self,
+        bucket_id: &str,
+        path: Option<&str>,
+        user_token: Option<&str>,
+    ) -> Result<Vec<FileObject>> {
         debug!("Listing files in bucket: {}", bucket_id);
 
         let url = format!("{}/storage/v1/object/list/{}", self.config.url, bucket_id);
@@ -380,7 +414,14 @@ impl Storage {
             "prefix": path.unwrap_or("")
         });
 
-        let response = self.http_client.post(&url).json(&payload).send().await?;
+        let mut request = self.http_client.post(&url).json(&payload);
+
+        // Override Authorization header with user token if provided
+        if let Some(token) = user_token {
+            request = request.header("Authorization", format!("Bearer {}", token));
+        }
+
+        let response = request.send().await?;
 
         if !response.status().is_success() {
             let status = response.status();
@@ -406,6 +447,49 @@ impl Storage {
         file_body: Bytes,
         options: Option<FileOptions>,
     ) -> Result<UploadResponse> {
+        self.upload_with_auth(bucket_id, path, file_body, options, None)
+            .await
+    }
+
+    /// Upload a file with authentication token
+    ///
+    /// This method allows passing a user authentication token for operations
+    /// on protected resources (e.g., when Row Level Security policies require authentication).
+    ///
+    /// # Arguments
+    ///
+    /// * `bucket_id` - The bucket identifier
+    /// * `path` - The file path in the bucket
+    /// * `file_body` - The file content as bytes
+    /// * `options` - Optional file options (content type, cache control, upsert)
+    /// * `user_token` - Optional user JWT token for authenticated requests
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::prelude::*;
+    /// # use bytes::Bytes;
+    /// # async fn example(client: &Client) -> Result<()> {
+    /// // Get user session token after authentication
+    /// let auth_response = client.auth().sign_in_with_email_and_password("user@example.com", "password").await?;
+    /// let token = &auth_response.session.as_ref().unwrap().access_token;
+    ///
+    /// // Upload to protected bucket
+    /// let file_data = Bytes::from("file content");
+    /// let response = client.storage()
+    ///     .upload_with_auth("private-bucket", "user-files/document.txt", file_data, None, Some(token))
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn upload_with_auth(
+        &self,
+        bucket_id: &str,
+        path: &str,
+        file_body: Bytes,
+        options: Option<FileOptions>,
+        user_token: Option<&str>,
+    ) -> Result<UploadResponse> {
         debug!("Uploading file to bucket: {} at path: {}", bucket_id, path);
 
         let options = options.unwrap_or_default();
@@ -429,6 +513,11 @@ impl Storage {
         }
 
         let mut request = self.http_client.post(&url).multipart(form);
+
+        // Override Authorization header with user token if provided
+        if let Some(token) = user_token {
+            request = request.header("Authorization", format!("Bearer {}", token));
+        }
 
         if options.upsert {
             request = request.header("x-upsert", "true");
@@ -461,6 +550,20 @@ impl Storage {
         file_body: Bytes,
         options: Option<FileOptions>,
     ) -> Result<UploadResponse> {
+        self.upload_with_auth(bucket_id, path, file_body, options, None)
+            .await
+    }
+
+    /// Upload a file with authentication token (WASM version)
+    #[cfg(target_arch = "wasm32")]
+    pub async fn upload_with_auth(
+        &self,
+        bucket_id: &str,
+        path: &str,
+        file_body: Bytes,
+        options: Option<FileOptions>,
+        user_token: Option<&str>,
+    ) -> Result<UploadResponse> {
         debug!(
             "Uploading file to bucket: {} at path: {} (WASM)",
             bucket_id, path
@@ -474,6 +577,11 @@ impl Storage {
         );
 
         let mut request = self.http_client.post(&url).body(file_body);
+
+        // Override Authorization header with user token if provided
+        if let Some(token) = user_token {
+            request = request.header("Authorization", format!("Bearer {}", token));
+        }
 
         if let Some(content_type) = options.content_type {
             request = request.header("Content-Type", content_type);
@@ -525,6 +633,40 @@ impl Storage {
 
     /// Download a file
     pub async fn download(&self, bucket_id: &str, path: &str) -> Result<Bytes> {
+        self.download_with_auth(bucket_id, path, None).await
+    }
+
+    /// Download a file with authentication token
+    ///
+    /// This method allows passing a user authentication token for downloading
+    /// files from protected buckets with Row Level Security policies.
+    ///
+    /// # Arguments
+    ///
+    /// * `bucket_id` - The bucket identifier
+    /// * `path` - The file path in the bucket
+    /// * `user_token` - Optional user JWT token for authenticated requests
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::prelude::*;
+    /// # async fn example(client: &Client) -> Result<()> {
+    /// let auth_response = client.auth().sign_in_with_email_and_password("user@example.com", "password").await?;
+    /// let token = &auth_response.session.as_ref().unwrap().access_token;
+    ///
+    /// let file_data = client.storage()
+    ///     .download_with_auth("private-bucket", "user-files/document.txt", Some(token))
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn download_with_auth(
+        &self,
+        bucket_id: &str,
+        path: &str,
+        user_token: Option<&str>,
+    ) -> Result<Bytes> {
         debug!(
             "Downloading file from bucket: {} at path: {}",
             bucket_id, path
@@ -535,7 +677,14 @@ impl Storage {
             self.config.url, bucket_id, path
         );
 
-        let response = self.http_client.get(&url).send().await?;
+        let mut request = self.http_client.get(&url);
+
+        // Override Authorization header with user token if provided
+        if let Some(token) = user_token {
+            request = request.header("Authorization", format!("Bearer {}", token));
+        }
+
+        let response = request.send().await?;
 
         if !response.status().is_success() {
             let error_msg = format!("Download failed with status: {}", response.status());
@@ -550,6 +699,40 @@ impl Storage {
 
     /// Delete a file
     pub async fn remove(&self, bucket_id: &str, paths: &[&str]) -> Result<()> {
+        self.remove_with_auth(bucket_id, paths, None).await
+    }
+
+    /// Remove/delete files with authentication token
+    ///
+    /// This method allows passing a user authentication token for deleting
+    /// files from protected buckets with Row Level Security policies.
+    ///
+    /// # Arguments
+    ///
+    /// * `bucket_id` - The bucket identifier
+    /// * `paths` - Array of file paths to delete
+    /// * `user_token` - Optional user JWT token for authenticated requests
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use supabase::prelude::*;
+    /// # async fn example(client: &Client) -> Result<()> {
+    /// let auth_response = client.auth().sign_in_with_email_and_password("user@example.com", "password").await?;
+    /// let token = &auth_response.session.as_ref().unwrap().access_token;
+    ///
+    /// client.storage()
+    ///     .remove_with_auth("private-bucket", &["user-files/old-doc.txt"], Some(token))
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn remove_with_auth(
+        &self,
+        bucket_id: &str,
+        paths: &[&str],
+        user_token: Option<&str>,
+    ) -> Result<()> {
         debug!("Deleting files from bucket: {}", bucket_id);
 
         let url = format!("{}/storage/v1/object/{}", self.config.url, bucket_id);
@@ -558,7 +741,14 @@ impl Storage {
             "prefixes": paths
         });
 
-        let response = self.http_client.delete(&url).json(&payload).send().await?;
+        let mut request = self.http_client.delete(&url).json(&payload);
+
+        // Override Authorization header with user token if provided
+        if let Some(token) = user_token {
+            request = request.header("Authorization", format!("Bearer {}", token));
+        }
+
+        let response = request.send().await?;
 
         if !response.status().is_success() {
             let error_msg = format!("Delete files failed with status: {}", response.status());

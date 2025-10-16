@@ -208,4 +208,4 @@
 ---
 
 _Last Updated: August 2025_
-_Version: 0.5.2_
+_Version: 0.5.3_
